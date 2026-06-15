@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>כלי תוכן יומי — MT Law</title>
+<style>
+  :root {
+    --blue-900: #0B2545;
+    --blue-800: #1B3A6B;
+    --blue-600: #1D5FAD;
+    --blue-400: #3B82C4;
+    --blue-100: #DDEAF8;
+    --blue-50:  #F0F6FD;
+    --gray-900: #1A1A2E;
+    --gray-600: #4A5568;
+    --gray-400: #718096;
+    --gray-200: #E2E8F0;
+    --gray-100: #F7F9FC;
+    --white:    #FFFFFF;
+    --green-600: #0D6E4F;
+    --green-50:  #E8F5EF;
+    --amber-600: #92540A;
+    --amber-50:  #FEF3E2;
+    --red-600:   #9B1C1C;
+    --red-50:    #FEF2F2;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-900);
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--blue-900);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--white);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--blue-600);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+  }
+  .header-tag {
+    font-size: 12px;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.75);
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .btn-settings {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.8);
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .btn-settings:hover { background: rgba(255,255,255,0.1); color: white; }
+
+  /* ── Layout ── */
+  .page { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* ── Setup Screen ── */
+  .setup-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 60px);
+    padding: 2rem;
+  }
+  .setup-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 2.5rem;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+  }
+  .setup-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--blue-50);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+    font-size: 24px;
+  }
+  .setup-card h2 { font-size: 20px; color: var(--blue-900); margin-bottom: 8px; }
+  .setup-card p { font-size: 14px; color: var(--gray-600); line-height: 1.6; margin-bottom: 1.5rem; }
+  .setup-card a { color: var(--blue-600); }
+  .api-input-wrap { position: relative; margin-bottom: 1rem; }
+  .api-input {
+    width: 100%;
+    height: 44px;
+    padding: 0 44px 0 12px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    direction: ltr;
+    text-align: left;
+    transition: border-color 0.15s;
+    color: var(--gray-900);
+    background: var(--white);
+  }
+  .api-input:focus { outline: none; border-color: var(--blue-400); }
+  .toggle-vis {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-400);
+    font-size: 16px;
+    padding: 0;
+  }
+  .btn-save-key {
+    width: 100%;
+    height: 44px;
+    background: var(--blue-800);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-save-key:hover { background: var(--blue-900); }
+  .setup-note {
+    margin-top: 1rem;
+    font-size: 12px;
+    color: var(--gray-400);
+    line-height: 1.5;
+  }
+
+  /* ── Main App ── */
+  .app-screen { display: none; }
+
+  /* ── Controls Card ── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 1rem;
+  }
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .ctrl-group { display: flex; flex-direction: column; gap: 6px; }
+  .ctrl-group label { font-size: 13px; color: var(--gray-600); font-weight: 500; }
+  select {
+    height: 40px;
+    padding: 0 10px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--gray-900);
+    background: var(--white);
+    cursor: pointer;
+    transition: border-color 0.15s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 7L11 1' stroke='%23718096' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 12px center;
+    padding-left: 32px;
+  }
+  select:focus { outline: none; border-color: var(--blue-400); }
+
+  .btn-row { display: flex; gap: 10px; align-items: center; }
+  .btn-generate {
+    flex: 1;
+    height: 46px;
+    background: var(--blue-800);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-generate:hover:not(:disabled) { background: var(--blue-900); }
+  .btn-generate:active:not(:disabled) { transform: scale(0.99); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-shuffle {
+    height: 46px;
+    padding: 0 16px;
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-shuffle:hover { border-color: var(--blue-400); color: var(--blue-600); }
+
+  /* ── Topic Badge ── */
+  .topic-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--blue-50);
+    border: 1px solid var(--blue-100);
+    border-radius: var(--radius-md);
+    margin-bottom: 1.25rem;
+  }
+  .topic-bar.visible { display: flex; }
+  .topic-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--blue-600);
+    flex-shrink: 0;
+  }
+  .topic-label { font-size: 13px; font-weight: 600; color: var(--blue-800); }
+  .topic-desc { font-size: 13px; color: var(--blue-600); margin-right: auto; }
+  .topic-tag {
+    font-size: 11px;
+    color: var(--blue-600);
+    background: var(--blue-100);
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── Output ── */
+  .output-card { display: none; }
+  .output-card.visible { display: block; }
+
+  .variant-tabs { display: flex; gap: 6px; margin-bottom: 1.25rem; }
+  .v-tab {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1.5px solid var(--gray-200);
+    background: var(--white);
+    color: var(--gray-600);
+    transition: all 0.15s;
+  }
+  .v-tab.active {
+    background: var(--blue-800);
+    border-color: var(--blue-800);
+    color: var(--white);
+    font-weight: 500;
+  }
+  .v-tab:not(.active):hover { border-color: var(--blue-400); color: var(--blue-600); }
+
+  .ethics-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--green-600);
+    background: var(--green-50);
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 1.25rem;
+  }
+
+  .content-text {
+    font-size: 15px;
+    line-height: 1.85;
+    color: var(--gray-900);
+    white-space: pre-wrap;
+    padding: 1.25rem;
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    min-height: 120px;
+  }
+
+  .notes-row {
+    margin-top: 1rem;
+    padding: 0.875rem 1rem;
+    background: var(--amber-50);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--amber-600);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    line-height: 1.6;
+  }
+  .notes-icon { flex-shrink: 0; margin-top: 1px; }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 1rem;
+    align-items: center;
+  }
+  .btn-copy {
+    padding: 8px 16px;
+    background: var(--blue-800);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-copy:hover { background: var(--blue-900); }
+  .btn-copy-all {
+    padding: 8px 14px;
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-copy-all:hover { border-color: var(--blue-400); color: var(--blue-600); }
+  .copy-confirm {
+    font-size: 13px;
+    color: var(--green-600);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .copy-confirm.show { opacity: 1; }
+
+  /* ── Ethics Report ── */
+  .ethics-report {
+    border-top: 1px solid var(--gray-200);
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+  }
+  .ethics-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 0.75rem;
+  }
+  .ethics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 0.75rem;
+  }
+  .e-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--green-600);
+    background: var(--green-50);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+  }
+  .disclaimer {
+    font-size: 12px;
+    color: var(--gray-400);
+    line-height: 1.5;
+    padding: 8px 12px;
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+  }
+
+  /* ── History ── */
+  .hist-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gray-200);
+    font-size: 13px;
+  }
+  .hist-row:last-child { border-bottom: none; }
+  .hist-date { color: var(--gray-400); min-width: 85px; }
+  .hist-topic { color: var(--gray-900); font-weight: 500; }
+  .hist-format { color: var(--gray-400); margin-right: auto; }
+  .empty-hist { font-size: 14px; color: var(--gray-400); text-align: center; padding: 1.5rem; }
+
+  /* ── Loading ── */
+  .loading-overlay {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 14px;
+  }
+  .loading-overlay.visible { display: flex; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2.5px solid var(--gray-200);
+    border-top-color: var(--blue-600);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--gray-600); }
+
+  /* ── Error ── */
+  .error-box {
+    display: none;
+    padding: 1rem 1.25rem;
+    background: var(--red-50);
+    border: 1px solid #FCA5A5;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--red-600);
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+  }
+  .error-box.visible { display: block; }
+
+  /* ── Settings Modal ── */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.visible { display: flex; }
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .modal h3 { font-size: 17px; color: var(--blue-900); margin-bottom: 0.5rem; }
+  .modal p { font-size: 13px; color: var(--gray-600); margin-bottom: 1.25rem; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 1rem; }
+  .btn-modal-cancel {
+    flex: 1;
+    height: 40px;
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--gray-600);
+    cursor: pointer;
+  }
+  .btn-modal-save {
+    flex: 2;
+    height: 40px;
+    background: var(--blue-800);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .btn-modal-save:hover { background: var(--blue-900); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--gray-400);
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--gray-200);
+    line-height: 1.7;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .page { padding: 1rem 1rem 3rem; }
+    .controls-grid { grid-template-columns: 1fr; }
+    .ethics-grid { grid-template-columns: repeat(2,1fr); }
+    .header { padding: 0 1rem; }
+    .logo span { display: none; }
+    .header-tag { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">MT</div>
+    <span>MT Law — כלי תוכן</span>
+    <span class="header-tag">עורכי דין</span>
+  </div>
+  <button class="btn-settings" onclick="openSettings()">⚙ הגדרות</button>
+</header>
+
+<!-- Setup Screen -->
+<div class="setup-screen" id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-icon">🔑</div>
+    <h2>הכנס את מפתח ה-API</h2>
+    <p>
+      הכלי עובד עם API של Anthropic (Claude).<br>
+      המפתח נשמר בדפדפן שלך בלבד ולא עובר לשום מקום.<br>
+      <a href="https://console.anthropic.com/settings/keys" target="_blank">לחץ כאן לקבלת מפתח API</a>
+    </p>
+    <div class="api-input-wrap">
+      <input type="password" id="apiKeyInput" class="api-input" placeholder="sk-ant-..." />
+      <button class="toggle-vis" onclick="toggleVis()" title="הצג/הסתר">👁</button>
+    </div>
+    <button class="btn-save-key" onclick="saveKey()">כניסה לכלי</button>
+    <p class="setup-note">
+      המפתח מאוחסן רק ב-localStorage של הדפדפן.<br>
+      לא נשלח לשום שרת מלבד api.anthropic.com ישירות.
+    </p>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="app-screen" id="appScreen">
+  <div class="page">
+
+    <!-- Controls -->
+    <div class="card">
+      <div class="card-title">הגדרות תוכן</div>
+      <div class="controls-grid">
+        <div class="ctrl-group">
+          <label>פורמט</label>
+          <select id="format">
+            <option value="facebook">פוסט פייסבוק אורגני</option>
+            <option value="ads">מודעה ממומנת (3 וריאציות)</option>
+            <option value="reels">סקריפט Reels / TikTok</option>
+            <option value="instagram">פוסט / קרוסלה אינסטגרם</option>
+            <option value="story">סטורי אינסטגרם</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>זווית</label>
+          <select id="angle">
+            <option value="auto">בחר אוטומטית (מומלץ)</option>
+            <option value="emotional">רגשית / סיפור אישי</option>
+            <option value="facts">עובדות ומספרים</option>
+            <option value="myth">שבירת מיתוס</option>
+            <option value="deadline">מועד אחרון / דחיפות</option>
+            <option value="question">שאלה פותחת</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-generate" id="genBtn" onclick="generate()">
+          <span id="genIcon">✦</span>
+          <span id="genLabel">צור תוכן יומי</span>
+        </button>
+        <button class="btn-shuffle" id="shuffleBtn" style="display:none" onclick="generate()">↻ תחום אחר</button>
+      </div>
+    </div>
+
+    <!-- Topic Bar -->
+    <div class="topic-bar" id="topicBar">
+      <div class="topic-dot"></div>
+      <span class="topic-label" id="topicName"></span>
+      <span class="topic-desc" id="topicDesc"></span>
+      <span class="topic-tag">תחום היום</span>
+    </div>
+
+    <!-- Error -->
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- Loading -->
+    <div class="card loading-overlay" id="loadingBox">
+      <div class="spinner"></div>
+      <span class="loading-text">כותב תוכן ועורך בדיקה אתית...</span>
+    </div>
+
+    <!-- Output -->
+    <div class="card output-card" id="outputCard">
+      <div class="card-title">תוצאות</div>
+
+      <div class="variant-tabs" id="variantTabs"></div>
+      <div class="ethics-badge">✓ עבר בדיקה אתית — כללי לשכת עורכי הדין</div>
+
+      <div class="content-text" id="contentText"></div>
+
+      <div class="notes-row" id="notesRow">
+        <span class="notes-icon">💡</span>
+        <span id="notesText"></span>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-copy" onclick="copyContent()">העתק תוכן</button>
+        <button class="btn-copy-all" onclick="copyAll()">העתק הכל (כל הוריאציות)</button>
+        <span class="copy-confirm" id="copyConfirm">✓ הועתק!</span>
+      </div>
+
+      <div class="ethics-report">
+        <div class="ethics-title">דוח בדיקה אתית</div>
+        <div class="ethics-grid" id="ethicsGrid"></div>
+        <div class="disclaimer" id="ethicsNotes"></div>
+        <div class="disclaimer" style="margin-top:6px">
+          ⚠️ הסתייגות מומלצת לפרסום: "התוצאות תלויות בנסיבות כל תיק" • "אין באמור ייעוץ משפטי"
+        </div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card" id="histCard">
+      <div class="card-title">תחומים אחרונים</div>
+      <div id="histContent"></div>
+    </div>
+
+    <div class="footer">
+      כלי פנימי — משרד MT Law | mt-law.co.il<br>
+      כל תוכן עובר בדיקה אוטומטית לפי כללי פרסומת של לשכת עורכי הדין בישראל.
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <h3>עדכון מפתח API</h3>
+    <p>המפתח הנוכחי שמור בדפדפן. הכנס מפתח חדש כדי לעדכן.</p>
+    <div class="api-input-wrap">
+      <input type="password" id="modalKeyInput" class="api-input" placeholder="sk-ant-..." />
+      <button class="toggle-vis" onclick="toggleModalVis()">👁</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeSettings()">ביטול</button>
+      <button class="btn-modal-save" onclick="updateKey()">שמור מפתח</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOPICS = [
+  {id:"work_accident",    name:"תאונת עבודה",                    desc:"ביטוח לאומי — נפגעי עבודה"},
+  {id:"general_disability", name:"נכות כללית — ביטוח לאומי",    desc:"קצבת נכות כללית"},
+  {id:"idf_disabled",     name:"נכי צה\"ל ומשרד הביטחון",       desc:"פגיעות שירות צבאי"},
+  {id:"tax_exemption",    name:"פטור ממס הכנסה — סעיף 9(5)",    desc:"רשות המסים לנכים"},
+  {id:"hostile_acts",     name:"נפגעי פעולות איבה",               desc:"ביטוח לאומי ומשרד הביטחון"},
+  {id:"nursing",          name:"גמלת סיעוד",                     desc:"ביטוח לאומי — קשיש סיעודי"},
+  {id:"child_disability", name:"ילד נכה",                        desc:"קצבת ילד נכה"},
+  {id:"road_accident",    name:"תאונת דרכים",                    desc:"נפגעים ופיצויים"},
+  {id:"general_injury",   name:"נזקי גוף כלליים",                desc:"תביעות פיצויים"},
+];
+
+const FORMAT_LABELS = {
+  facebook: "פוסט פייסבוק אורגני",
+  ads:      "מודעה ממומנת (3 וריאציות)",
+  reels:    "סקריפט Reels / TikTok",
+  instagram:"פוסט / קרוסלה אינסטגרם",
+  story:    "סטורי אינסטגרם"
+};
+
+const HIST_KEY = "mtlaw_hist_v2";
+let currentVariants = [];
+let activeVariant   = 0;
+
+// ── Init ──
+window.addEventListener("DOMContentLoaded", () => {
+  const key = localStorage.getItem("mtlaw_api_key");
+  if (key) showApp();
+  else     showSetup();
+  renderHistory();
+});
+
+function showSetup() {
+  document.getElementById("setupScreen").style.display = "flex";
+  document.getElementById("appScreen").style.display   = "none";
+}
+function showApp() {
+  document.getElementById("setupScreen").style.display = "none";
+  document.getElementById("appScreen").style.display   = "block";
+}
+
+// ── API Key ──
+function saveKey() {
+  const k = document.getElementById("apiKeyInput").value.trim();
+  if (!k.startsWith("sk-")) { alert("מפתח לא תקין. חייב להתחיל ב-sk-"); return; }
+  localStorage.setItem("mtlaw_api_key", k);
+  showApp();
+}
+function toggleVis() {
+  const i = document.getElementById("apiKeyInput");
+  i.type = i.type === "password" ? "text" : "password";
+}
+function openSettings() {
+  document.getElementById("settingsModal").classList.add("visible");
+}
+function closeSettings() {
+  document.getElementById("settingsModal").classList.remove("visible");
+}
+function updateKey() {
+  const k = document.getElementById("modalKeyInput").value.trim();
+  if (!k.startsWith("sk-")) { alert("מפתח לא תקין"); return; }
+  localStorage.setItem("mtlaw_api_key", k);
+  closeSettings();
+}
+function toggleModalVis() {
+  const i = document.getElementById("modalKeyInput");
+  i.type = i.type === "password" ? "text" : "password";
+}
+
+// ── Topic selection (avoid repeats) ──
+function pickTopic() {
+  const hist = getHistory().slice(0,5).map(h => h.topic);
+  let pool = TOPICS.filter(t => !hist.includes(t.id));
+  if (!pool.length) pool = TOPICS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── Generate ──
+async function generate() {
+  const apiKey = localStorage.getItem("mtlaw_api_key");
+  if (!apiKey) { showSetup(); return; }
+
+  const btn = document.getElementById("genBtn");
+  btn.disabled = true;
+  document.getElementById("genLabel").textContent = "מייצר...";
+  document.getElementById("errorBox").classList.remove("visible");
+  document.getElementById("outputCard").classList.remove("visible");
+
+  const topic  = pickTopic();
+  const format = document.getElementById("format").value;
+  const angle  = document.getElementById("angle").value;
+  const angleLabel = angle === "auto" ? "זווית לפי שיקול דעתך (בחר את המתאימה)" : angle;
+
+  // Show topic bar
+  document.getElementById("topicName").textContent = topic.name;
+  document.getElementById("topicDesc").textContent = topic.desc;
+  document.getElementById("topicBar").classList.add("visible");
+  document.getElementById("shuffleBtn").style.display = "";
+
+  // Show loader
+  document.getElementById("loadingBox").classList.add("visible");
+
+  const systemPrompt = `אתה copywriter בכיר ובקר אתיקה משפטית עבור משרד עורכי דין MT Law (mt-law.co.il) בתחום נזקי גוף ותביעות נכות. המשרד מייצג תובעים בלבד (לא נתבעים).
+
+## כללי טון
+- ישיר, עממי, בגובה העיניים
+- ללא ז'רגון משפטי
+- ללא הבטחות תוצאה (אסור!)
+- שפה שאמא שלך מבינה
+
+## כללי אתיקה חובה (לשכת עורכי הדין בישראל)
+A. אין הבטחת תוצאה — אסור "מובטח", "97% הצלחה", "נשיג לך X%"
+B. אין הטעיה
+C. אין השוואה לעורכי דין אחרים — אסור "הטובים ביותר", "המובילים"
+D. אין סוליציטציה — אסור פנייה לאירוע ספציפי שקרה
+E. אין חשיפת פרטי לקוח ממשי
+F. אין ייעוץ משפטי קונקרטי עם תאריכים/סכומים מחייבים
+G. אין פגיעה בכבוד המקצוע
+H. אין פרטים לא נכונים על המשרד
+
+## תפקידך
+1. כתוב 2 וריאציות תוכן שונות בזווית
+2. עבור כל וריאציה — בצע בדיקת A-H
+3. תקן אוטומטית כל בעיה לפני שאתה מציג
+4. הסר כל HARD STOP
+
+## פורמט תשובה
+החזר JSON בלבד, ללא טקסט נוסף, ללא backticks:
+{
+  "variants": [
+    {"label":"הצעה 1","content":"תוכן הפוסט כאן","notes":"הערות שיווק: ויזואל, קהל, hashtags"},
+    {"label":"הצעה 2","content":"תוכן הפוסט כאן","notes":"הערות שיווק: ויזואל, קהל, hashtags"}
+  ],
+  "ethics": {"A":"OK","B":"OK","C":"OK","D":"OK","E":"OK","F":"OK","G":"OK","H":"OK"},
+  "ethics_notes": "תיאור תיקונים שבוצעו אם היו"
+}`;
+
+  const userMsg = `כתוב ${FORMAT_LABELS[format]} בנושא: ${topic.name} (${topic.desc}).
+זווית: ${angleLabel}.
+2 וריאציות שונות בזווית.
+שפה: עברית. קהל: לא משפטי, אנשים שעוברים תקופה קשה.
+הוסף בסוף כל תוכן בשורה נפרדת: "⚠️ אין באמור ייעוץ משפטי"
+חשוב מאוד: כל וריאציה עד 100 מילה בלבד. ה-JSON חייב להיות שלם ותקני.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 2500,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMsg }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 401) throw new Error("מפתח API לא תקין. עדכן בהגדרות.");
+      throw new Error(err.error?.message || `שגיאת שרת (${res.status})`);
+    }
+
+    const data = await res.json();
+    const raw  = data.content.map(i => i.text || "").join("");
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+
+    currentVariants = parsed.variants;
+    activeVariant   = 0;
+    saveHistory(topic.id, topic.name, FORMAT_LABELS[format]);
+    renderOutput(parsed);
+    renderHistory();
+
+  } catch(e) {
+    document.getElementById("errorBox").textContent = "שגיאה: " + e.message;
+    document.getElementById("errorBox").classList.add("visible");
+  }
+
+  document.getElementById("loadingBox").classList.remove("visible");
+  btn.disabled = false;
+  document.getElementById("genLabel").textContent = "צור תוכן יומי";
+}
+
+// ── Render Output ──
+function renderOutput(data) {
+  const tabs = data.variants.map((v, i) =>
+    `<button class="v-tab${i===0?" active":""}" onclick="switchVariant(${i})">${v.label}</button>`
+  ).join("");
+  document.getElementById("variantTabs").innerHTML = tabs;
+
+  const ethicsItems = Object.entries(data.ethics).map(([k,v]) =>
+    `<div class="e-item">✓ סעיף ${k}</div>`
+  ).join("");
+  document.getElementById("ethicsGrid").innerHTML = ethicsItems;
+
+  const notesEl = document.getElementById("ethicsNotes");
+  notesEl.textContent = data.ethics_notes || "לא בוצעו תיקונים — הטיוטה עברה את כל הסעיפים ישירות.";
+
+  renderVariant(0);
+  document.getElementById("outputCard").classList.add("visible");
+  document.getElementById("outputCard").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderVariant(i) {
+  activeVariant = i;
+  document.querySelectorAll(".v-tab").forEach((t, idx) => {
+    t.className = "v-tab" + (idx === i ? " active" : "");
+  });
+  const v = currentVariants[i];
+  document.getElementById("contentText").textContent = v.content;
+  document.getElementById("notesText").textContent   = v.notes;
+}
+
+function switchVariant(i) { renderVariant(i); }
+
+// ── Copy ──
+function copyContent() {
+  navigator.clipboard.writeText(currentVariants[activeVariant].content).then(showCopied);
+}
+function copyAll() {
+  const all = currentVariants.map((v, i) =>
+    `=== ${v.label} ===\n${v.content}\n\nהערות: ${v.notes}`
+  ).join("\n\n" + "—".repeat(40) + "\n\n");
+  navigator.clipboard.writeText(all).then(showCopied);
+}
+function showCopied() {
+  const el = document.getElementById("copyConfirm");
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2000);
+}
+
+// ── History ──
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); } catch(e) { return []; }
+}
+function saveHistory(id, name, format) {
+  let h = getHistory();
+  h.unshift({ topic: id, name, format, date: new Date().toLocaleDateString("he-IL") });
+  if (h.length > 20) h = h.slice(0, 20);
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(h)); } catch(e) {}
+}
+function renderHistory() {
+  const h   = getHistory();
+  const el  = document.getElementById("histContent");
+  if (!h.length) { el.innerHTML = '<div class="empty-hist">עדיין לא נוצר תוכן — לחץ "צור תוכן יומי" להתחלה</div>'; return; }
+  el.innerHTML = h.map(x =>
+    `<div class="hist-row">
+      <span class="hist-date">${x.date}</span>
+      <span class="hist-topic">${x.name}</span>
+      <span class="hist-format">${x.format}</span>
+    </div>`
+  ).join("");
+}
+</script>
+</body>
+</html>
