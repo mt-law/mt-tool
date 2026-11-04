@@ -1,0 +1,170 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isAnonymous() { return isSignedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
+    // מייל נחשב "מאומת" רק אם ההתחברות הוכיחה בפועל שליטה בתיבת הדואר (קישור במייל, או אימות מייל מפורש) -
+    // זה מונע התחזות ע"י יצירת חשבון אימייל+סיסמה עם כתובת של מישהו אחר שעדיין לא נכנס בעצמו
+    function myEmail() {
+      return (isSignedIn()
+              && request.auth.token.get('email', null) != null
+              && request.auth.token.get('email_verified', false) == true)
+        ? request.auth.token.email : null;
+    }
+    function isAdmin() { return isSignedIn() && myEmail() != null && exists(/databases/$(database)/documents/admins/$(myEmail())); }
+    // "scope" של מנהל: 'full' (ברירת מחדל, כולל למנהלים ישנים שנוצרו לפני שהשדה הוזן) או 'mm_file'
+    // (רואה ומנהל אך ורק את סקשן "רשלנות רפואית - פייל", ללא שום גישה ללידים/עו"ד/לקוחות הרגילים)
+    function adminScope() {
+      return isAdmin() ? get(/databases/$(database)/documents/admins/$(myEmail())).data.get('scope', 'full') : null;
+    }
+    function isFullAdmin() { return isAdmin() && adminScope() == 'full'; }
+    function isMmAdmin() { return isAdmin() && (adminScope() == 'full' || adminScope() == 'mm_file'); }
+
+    // מנהלים - קריאה לכל מנהל (לצורך מסך "ניהול מנהלים"); יצירה/עריכה/מחיקה רק ע"י מנהל מלא
+    // (כדי שמנהל מוגבל ל"פייל" לא יוכל להעניק לעצמו או לאחרים הרשאות רחבות יותר)
+    match /admins/{email} {
+      allow read: if isAdmin();
+      allow write: if isFullAdmin();
+    }
+
+    match /practiceAreas/{id} {
+      allow read: if isSignedIn();
+      allow write: if isFullAdmin();
+    }
+    match /regions/{id} {
+      allow read: if isSignedIn();
+      allow write: if isFullAdmin();
+    }
+
+    // רשימות מאסטר לסקשן רשלנות רפואית - ניהול גם ע"י מנהל "פייל" מוגבל
+    match /mmCollectionStatuses/{id} {
+      allow read: if isSignedIn();
+      allow write: if isMmAdmin();
+    }
+    match /mmClosureReasons/{id} {
+      allow read: if isSignedIn();
+      allow write: if isMmAdmin();
+    }
+
+    // עורכי דין - כל אחד יכול לקרוא רק את הכרטיס שלו; מנהל מלא רואה הכל; מנהל "פייל" רואה/מנהל
+    // אך ורק עורכי דין מסוג lawyerType=='mm_file' (רשת ההפניות הרגילה לא נגישה לו בכלל)
+    match /lawyers/{email} {
+      allow get: if isFullAdmin() || myEmail() == email
+                 || (isMmAdmin() && resource.data.lawyerType == 'mm_file');
+      allow list: if isFullAdmin() || (isMmAdmin() && resource.data.lawyerType == 'mm_file');
+      allow create: if isFullAdmin()
+        || (isMmAdmin() && request.resource.data.lawyerType == 'mm_file')
+        || (isAnonymous() && !exists(/databases/$(database)/documents/lawyers/$(email))
+            && request.resource.data.status == 'pending'
+            && request.resource.data.rating == 0
+            && request.resource.data.fullName is string && request.resource.data.fullName.size() < 150
+            && request.resource.data.phone is string && request.resource.data.phone.size() < 40);
+      allow update, delete: if isFullAdmin() || (isMmAdmin() && resource.data.lawyerType == 'mm_file');
+    }
+
+    // לידים (רשת ההפניות הרגילה) - סקשן זה שמור למנהל מלא בלבד; עו"ד עצמו ממשיך לראות את מה ששייך לו
+    match /leads/{leadId} {
+      allow get: if isFullAdmin()
+                 || (isSignedIn() && !isAnonymous() && (resource.data.assignedLawyerEmail == myEmail()
+                     || (resource.data.offeredLawyerEmails is list && myEmail() in resource.data.offeredLawyerEmails)));
+      allow list: if isFullAdmin()
+                 || (isSignedIn() && !isAnonymous() && (resource.data.assignedLawyerEmail == myEmail()
+                     || (resource.data.offeredLawyerEmails is list && myEmail() in resource.data.offeredLawyerEmails)));
+      allow create: if isFullAdmin();
+      allow delete: if isFullAdmin();
+      allow update: if isFullAdmin()
+                    || (isSignedIn() && !isAnonymous()
+                        && resource.data.offeredLawyerEmails is list && myEmail() in resource.data.offeredLawyerEmails
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'assignedLawyerEmail', 'caseOpenedAt']));
+
+      match /private/{docId} {
+        allow read: if isFullAdmin()
+          || (isSignedIn() && !isAnonymous()
+              && exists(/databases/$(database)/documents/leads/$(leadId)/offers/$(myEmail()))
+              && get(/databases/$(database)/documents/leads/$(leadId)/offers/$(myEmail())).data.status
+                 in ['offer_accepted', 'offer_meeting_scheduled', 'offer_case_opened']);
+        allow write: if isFullAdmin();
+      }
+
+      match /offers/{lawyerEmailId} {
+        allow get: if isFullAdmin() || (isSignedIn() && !isAnonymous() && lawyerEmailId == myEmail());
+        allow list: if isFullAdmin() || (isSignedIn() && !isAnonymous()
+                       && (resource.data.lawyerEmail == myEmail()
+                           || exists(/databases/$(database)/documents/leads/$(leadId)/offers/$(myEmail()))));
+        allow create: if isFullAdmin();
+        allow delete: if isFullAdmin();
+        allow update: if isFullAdmin()
+          || (isSignedIn() && !isAnonymous() && lawyerEmailId == myEmail()
+              && request.resource.data.lawyerEmail == resource.data.lawyerEmail)
+          || (isSignedIn() && !isAnonymous()
+              && exists(/databases/$(database)/documents/leads/$(leadId)/offers/$(myEmail()))
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+              && request.resource.data.status == 'offer_closed_other_won');
+      }
+    }
+
+    match /responseTokens/{token} {
+      allow get: if isFullAdmin() || isAnonymous();
+      allow list: if isFullAdmin() || (isSignedIn() && !isAnonymous() && resource.data.lawyerEmail == myEmail());
+      allow create: if isFullAdmin();
+      allow delete: if isFullAdmin();
+      allow update: if isFullAdmin()
+        || (isAnonymous() && resource.data.decision == null
+            && request.resource.data.decision in ['offer_accepted', 'offer_declined']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['decision', 'decidedAt']))
+        || (isAnonymous() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewedAt']));
+    }
+
+    match /cases/{caseId} {
+      allow get: if isFullAdmin() || (isSignedIn() && !isAnonymous() && resource.data.lawyerEmail == myEmail());
+      allow list: if isFullAdmin() || (isSignedIn() && !isAnonymous() && resource.data.lawyerEmail == myEmail());
+      allow create: if isFullAdmin() || (isSignedIn() && !isAnonymous() && request.resource.data.lawyerEmail == myEmail());
+      allow update: if isFullAdmin()
+                    || (isSignedIn() && !isAnonymous() && resource.data.lawyerEmail == myEmail()
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['feeAgreed', 'lawyerEmail', 'leadId']));
+    }
+
+    // תיקי רשלנות רפואית ("פייל") - סקשן נפרד ומבודד לגמרי מהרשת הרגילה. אין שלב "הצעה/קבלה" -
+    // התיק נוצר ומשובץ ישירות ע"י מנהל (מלא או "פייל") לעו"ד המטפל הקבוע.
+    match /mmFiles/{fileId} {
+      allow get: if isMmAdmin() || (isSignedIn() && !isAnonymous() && resource.data.assignedLawyerEmail == myEmail());
+      allow list: if isMmAdmin() || (isSignedIn() && !isAnonymous() && resource.data.assignedLawyerEmail == myEmail());
+      allow create: if isMmAdmin();
+      allow delete: if isMmAdmin();
+      // העו"ד המטפל יכול לעדכן רק את שדות הטיפול (סטטוס/גבייה/סגירה), לא את פרטי התיק המקוריים
+      allow update: if isMmAdmin()
+        || (isSignedIn() && !isAnonymous() && resource.data.assignedLawyerEmail == myEmail()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'collectionStatus', 'closureReason', 'closedAt']));
+
+      match /private/{docId} {
+        allow read: if isMmAdmin() || (isSignedIn() && !isAnonymous() && get(/databases/$(database)/documents/mmFiles/$(fileId)).data.assignedLawyerEmail == myEmail());
+        allow write: if isMmAdmin();
+      }
+
+      // יומן מגעים בתיק - העו"ד המטפל רושם, המנהל קורא; אף אחד לא עורך/מוחק רישום קיים
+      match /contactLog/{logId} {
+        allow read: if isMmAdmin() || (isSignedIn() && !isAnonymous() && get(/databases/$(database)/documents/mmFiles/$(fileId)).data.assignedLawyerEmail == myEmail());
+        allow create: if isMmAdmin()
+          || (isSignedIn() && !isAnonymous()
+              && get(/databases/$(database)/documents/mmFiles/$(fileId)).data.assignedLawyerEmail == myEmail()
+              && request.resource.data.byLawyerEmail == myEmail());
+        allow update, delete: if false;
+      }
+    }
+
+    match /counters/{id} {
+      allow read: if isFullAdmin() || (isMmAdmin() && id == 'mmFileCounter');
+      allow write: if isFullAdmin() || (isMmAdmin() && id == 'mmFileCounter');
+    }
+
+    // היסטוריית סטטוסים (רשת ההפניות הרגילה בלבד - לתיקי רשלנות רפואית יש יומן מגעים משלהם)
+    match /statusLogs/{id} {
+      allow read: if isFullAdmin();
+      allow create: if (isFullAdmin() && request.resource.data.actor == 'admin' && request.resource.data.performedBy == myEmail())
+                    || (isSignedIn() && !isAnonymous() && request.resource.data.actor == 'lawyer'
+                        && request.resource.data.lawyerEmail == myEmail());
+      allow update, delete: if false;
+    }
+  }
+}

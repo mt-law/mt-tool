@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>הצטרפות לשת"פ | מערכת הפניות</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Heebo:wght@400;500;600&display=swap');
+:root {
+  --bg: #F6F4EF; --surface: #FFFFFF; --ink: #23292B; --ink-soft: #5B635F;
+  --primary: #1F3A3D; --primary-light: #2E5256; --accent: #A8763E; --accent-soft: #F0E4D3;
+  --border: #E2DED4; --success: #3F6B4F; --success-bg: #E7F0E9;
+  --danger: #A23B33; --danger-bg: #F7E8E6; --radius: 6px;
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:'Heebo',sans-serif; direction:rtl; font-size:15px; line-height:1.55; }
+h1,h2 { font-family:'Frank Ruhl Libre',serif; font-weight:700; color:var(--primary); margin:0 0 .4em 0; }
+.wrap { max-width: 560px; margin: 40px auto; padding: 0 20px; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:30px 28px; }
+.muted { color:var(--ink-soft); font-size:.9rem; }
+.error-msg { color:var(--danger); font-size:.85rem; margin-top:8px; }
+label { display:block; font-size:.85rem; color:var(--ink-soft); margin:14px 0 4px; }
+input, textarea { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:var(--radius); font-family:'Heebo',sans-serif; font-size:.9rem; background:#fff; color:var(--ink); }
+textarea { min-height:80px; resize:vertical; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.chip { border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:.82rem; cursor:pointer; user-select:none; }
+.chip.selected { background:var(--primary); color:#fff; border-color:var(--primary); }
+.btn { display:inline-block; background:var(--primary); color:#fff; border:none; padding:11px 20px; border-radius:var(--radius); font-family:'Heebo',sans-serif; font-size:.95rem; cursor:pointer; width:100%; margin-top:20px; }
+.btn:hover { background:var(--primary-light); }
+.config-banner { background:#F6EDD8; color:#92711F; padding:10px 16px; font-size:.85rem; text-align:center; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="card">
+      <h1>הצטרפות לשת"פ</h1>
+      <p class="muted">מלא/י את הפרטים הבאים - לאחר בדיקה ואישור ע"י המשרד, תתווסף לרשת עורכי הדין השותפים ותתחיל/י לקבל הפניות בתחומי העיסוק והאזורים שתבחר/י.</p>
+      <form id="registerForm">
+        <label>שם מלא</label>
+        <input id="fullName" required>
+        <label>טלפון</label>
+        <input id="phone" required>
+        <label>אימייל (ישמש גם לכניסה למערכת)</label>
+        <input id="email" type="email" required>
+        <label>מספר רישיון עו"ד</label>
+        <input id="licenseNumber" required>
+        <label>כתובת המשרד</label>
+        <input id="officeAddress" required>
+        <label>שנות ניסיון משפטי</label>
+        <select id="experienceYears" required><option value="">בחר/י...</option></select>
+        <label>האם יש ניסיון בייצוג מול ועדות רפואיות?</label>
+        <select id="medicalCommittees" required>
+          <option value="">בחר/י...</option>
+          <option value="כן">כן</option>
+          <option value="לא">לא</option>
+        </select>
+        <label>תחומי עיסוק</label>
+        <div class="chips" id="areaChips"><span class="muted">טוען...</span></div>
+        <label>אזורי עיסוק</label>
+        <div class="chips" id="regionChips"><span class="muted">טוען...</span></div>
+        <label>הערות נוספות (אופציונלי)</label>
+        <textarea id="notes" placeholder="התמחויות מיוחדות וכו'"></textarea>
+
+        <label style="display:flex; align-items:flex-start; gap:8px; margin-top:18px; cursor:pointer;">
+          <input type="checkbox" id="termsAgree" required style="width:auto; margin-top:3px;">
+          <span>אני מאשר/ת את <b>תנאי ההתקשרות</b> עם משרד עורכי הדין <b>מרקמן טומשין ושות'</b>.</span>
+        </label>
+
+        <div class="error-msg" id="err"></div>
+        <button class="btn" type="submit">שליחת בקשת הצטרפות</button>
+        <a class="btn" id="preCallBtn" style="background:transparent; color:#1F3A3D; border:1px solid #E2DED4; text-decoration:none; text-align:center; display:block;">אשמח לשיחה מקדימה עם נציג המשרד</a>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDd8rcBAPysNvsGsydUhB5AXnqIw_RwU14",
+  authDomain: "stp-lids.firebaseapp.com",
+  projectId: "stp-lids",
+  storageBucket: "stp-lids.firebasestorage.app",
+  messagingSenderId: "885779964489",
+  appId: "1:885779964489:web:cc8dd3ceed61093b711598",
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+if (firebaseConfig.apiKey.startsWith("PASTE_")) {
+  const b = document.createElement("div");
+  b.className = "config-banner";
+  b.textContent = "⚠ המערכת עדיין לא מחוברת ל-Firebase - יש להשלים את ההגדרות בראש הקובץ";
+  document.body.prepend(b);
+}
+
+const card = document.getElementById("card");
+let practiceAreas = [], regions = [];
+
+function wireChips(id) {
+  document.querySelectorAll(`#${id} .chip`).forEach((c) => c.addEventListener("click", () => c.classList.toggle("selected")));
+}
+function getSelectedChips(id) {
+  return Array.from(document.querySelectorAll(`#${id} .chip.selected`)).map((c) => c.dataset.value);
+}
+
+async function loadLists() {
+  await auth.signInAnonymously();
+  const [pa, rg] = await Promise.all([db.collection("practiceAreas").get(), db.collection("regions").get()]);
+  practiceAreas = pa.docs.map((d) => d.data().name);
+  regions = rg.docs.map((d) => d.data().name);
+  document.getElementById("areaChips").innerHTML = practiceAreas.map((n) => `<span class="chip" data-value="${n}">${n}</span>`).join("") || '<span class="muted">אין תחומים מוגדרים כרגע</span>';
+  document.getElementById("regionChips").innerHTML = regions.map((n) => `<span class="chip" data-value="${n}">${n}</span>`).join("") || '<span class="muted">אין אזורים מוגדרים כרגע</span>';
+  wireChips("areaChips");
+  wireChips("regionChips");
+}
+loadLists().catch((ex) => {
+  document.getElementById("err").textContent = "שגיאה בטעינת הטפסים: " + ex.message;
+});
+
+// אפשרויות שנות ניסיון: 0 עד 30, ואז "+30"
+(function populateExperienceYears() {
+  const sel = document.getElementById("experienceYears");
+  for (let y = 0; y <= 30; y++) {
+    const opt = document.createElement("option");
+    opt.value = String(y);
+    opt.textContent = String(y);
+    sel.appendChild(opt);
+  }
+  const optPlus = document.createElement("option");
+  optPlus.value = "30+";
+  optPlus.textContent = "+30";
+  sel.appendChild(optPlus);
+})();
+
+// כפתור "אשמח לשיחה מקדימה" - שומר את הרישום (סטטוס "ממתין לאישור", כמו רישום רגיל) ובנוסף פותח מייל למשרד.
+// לא דורש אישור תנאי ההתקשרות (עדיין לא התחייב) - אבל כן דורש שם/טלפון/מייל כדי שיהיה למי לשייך את הבקשה.
+document.getElementById("preCallBtn").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const err = document.getElementById("err");
+  err.textContent = "";
+  const name = document.getElementById("fullName").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const email = document.getElementById("email").value.trim();
+  if (!name || !phone || !email) {
+    err.textContent = "נא למלא לפחות שם, טלפון ואימייל לפני בקשת שיחה מקדימה.";
+    return;
+  }
+  try {
+    await db.collection("lawyers").doc(email).set({
+      fullName: name,
+      phone,
+      licenseNumber: document.getElementById("licenseNumber").value,
+      officeAddress: document.getElementById("officeAddress").value,
+      experienceYears: document.getElementById("experienceYears").value,
+      medicalCommitteesExperience: document.getElementById("medicalCommittees").value,
+      practiceAreas: getSelectedChips("areaChips"),
+      regions: getSelectedChips("regionChips"),
+      rating: 0,
+      feeTerms: "",
+      status: "pending",
+      internalNotes: (document.getElementById("notes").value ? document.getElementById("notes").value + "\n" : "") + "ביקש/ה שיחה מקדימה לפני השלמת ההרשמה.",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (ex) {
+    if (ex.code !== "permission-denied") { // "כבר רשום" זה בסדר כאן - פשוט ממשיכים לשליחת המייל
+      err.textContent = "שגיאה בשמירת הפרטים: " + ex.message;
+      return;
+    }
+  }
+  const subject = encodeURIComponent("בקשה לשיחה מקדימה");
+  const body = encodeURIComponent(`שלום,\n\nאשמח לשיחה מקדימה לפני השלמת ההרשמה.\n\nשם: ${name}\nטלפון: ${phone}\nאימייל: ${email}\n\nתודה.`);
+  window.location.href = `mailto:davidi@mt-law.co.il?subject=${subject}&body=${body}`;
+});
+
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = document.getElementById("err");
+  err.textContent = "";
+  const email = document.getElementById("email").value.trim();
+  try {
+    if (!document.getElementById("termsAgree").checked) {
+      err.textContent = "יש לאשר את תנאי ההתקשרות כדי להמשיך.";
+      return;
+    }
+    await db.collection("lawyers").doc(email).set({
+      fullName: document.getElementById("fullName").value,
+      phone: document.getElementById("phone").value,
+      licenseNumber: document.getElementById("licenseNumber").value,
+      officeAddress: document.getElementById("officeAddress").value,
+      experienceYears: document.getElementById("experienceYears").value,
+      medicalCommitteesExperience: document.getElementById("medicalCommittees").value,
+      practiceAreas: getSelectedChips("areaChips"),
+      regions: getSelectedChips("regionChips"),
+      rating: 0,
+      feeTerms: "",
+      status: "pending",
+      internalNotes: document.getElementById("notes").value,
+      termsAgreedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    card.innerHTML = `
+      <h1>תודה!</h1>
+      <p>בקשת ההצטרפות שלך התקבלה בהצלחה וממתינה לבדיקה ואישור של המשרד.</p>
+      <p class="muted">נציג המשרד ייצור איתך קשר בהקדם. לאחר האישור, תוכל/י להתחבר לאזור האישי שלך דרך דף הכניסה הרגיל באמצעות כתובת המייל שהזנת.</p>`;
+  } catch (ex) {
+    if (ex.code === "permission-denied") {
+      err.textContent = "כתובת מייל זו כבר רשומה במערכת. אם זהו המייל שלך, נא ליצור קשר עם המשרד.";
+    } else {
+      err.textContent = "שגיאה: " + ex.message;
+    }
+  }
+});
+  </script>
+</body>
+</html>

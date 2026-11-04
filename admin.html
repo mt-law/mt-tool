@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>אזור ניהול | מערכת הפניות</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Heebo:wght@400;500;600&display=swap');
+:root {
+  --bg: #F6F4EF; --surface: #FFFFFF; --ink: #23292B; --ink-soft: #5B635F;
+  --primary: #1F3A3D; --primary-light: #2E5256; --accent: #A8763E; --accent-soft: #F0E4D3;
+  --border: #E2DED4; --success: #3F6B4F; --success-bg: #E7F0E9;
+  --danger: #A23B33; --danger-bg: #F7E8E6; --warn: #92711F; --warn-bg: #F6EDD8; --radius: 6px;
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:'Heebo',sans-serif; direction:rtl; font-size:15px; line-height:1.55; }
+h1,h2,h3 { font-family:'Frank Ruhl Libre',serif; font-weight:700; color:var(--primary); margin:0 0 .4em 0; }
+a { color: var(--primary); }
+.layout { display:flex; min-height:100vh; }
+.sidebar { width:230px; background:var(--primary); color:#EDEFEA; padding:24px 18px; flex-shrink:0; }
+.sidebar .brand { font-family:'Frank Ruhl Libre',serif; font-size:1.2rem; margin-bottom:28px; color:#fff; }
+.sidebar nav a { display:block; color:#C9D2CC; text-decoration:none; padding:10px 12px; border-radius:var(--radius); margin-bottom:4px; font-size:.95rem; cursor:pointer; }
+.sidebar nav a:hover { background:rgba(255,255,255,.08); color:#fff; }
+.sidebar nav a.active { background:var(--accent); color:#fff; }
+.sidebar .user-info { margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,.15); font-size:.85rem; color:#C9D2CC; }
+.main { flex:1; padding:32px 40px; max-width:1100px; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; margin-bottom:20px; }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
+.stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; }
+.stat .num { font-family:'Frank Ruhl Libre',serif; font-size:1.9rem; color:var(--primary); }
+.stat .label { color:var(--ink-soft); font-size:.85rem; }
+table { width:100%; border-collapse:collapse; font-size:.9rem; }
+th,td { text-align:right; padding:10px 12px; border-bottom:1px solid var(--border); }
+th { color:var(--ink-soft); font-weight:500; font-size:.82rem; }
+tr:hover td { background:#FAFAF7; }
+.btn { display:inline-block; background:var(--primary); color:#fff; border:none; padding:9px 18px; border-radius:var(--radius); font-family:'Heebo',sans-serif; font-size:.9rem; cursor:pointer; text-decoration:none; }
+.btn:hover { background:var(--primary-light); }
+.btn.secondary { background:transparent; color:var(--primary); border:1px solid var(--border); }
+.btn.accent { background:var(--accent); }
+.btn.danger { background:var(--danger); }
+.btn.small { padding:5px 12px; font-size:.8rem; }
+.badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.78rem; }
+.badge.new,.badge.offered { background:var(--warn-bg); color:var(--warn); }
+.badge.accepted,.badge.meeting_scheduled { background:var(--accent-soft); color:var(--accent); }
+.badge.case_opened { background:#E3EAF0; color:var(--primary); }
+.badge.fully_collected,.badge.active { background:var(--success-bg); color:var(--success); }
+.badge.declined,.badge.sla_expired,.badge.not_realized,.badge.closed_no_payment,.badge.blocked { background:var(--danger-bg); color:var(--danger); }
+.badge.offer_pending { background:var(--warn-bg); color:var(--warn); }
+.badge.offer_accepted,.badge.offer_meeting_scheduled { background:var(--accent-soft); color:var(--accent); }
+.badge.offer_case_opened { background:#E3EAF0; color:var(--primary); }
+.badge.offer_declined,.badge.offer_not_realized,.badge.offer_closed_other_won { background:var(--danger-bg); color:var(--danger); }
+label { display:block; font-size:.85rem; color:var(--ink-soft); margin:12px 0 4px; }
+input,select,textarea { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:var(--radius); font-family:'Heebo',sans-serif; font-size:.9rem; background:#fff; color:var(--ink); }
+textarea { min-height:90px; resize:vertical; }
+.auth-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); }
+.auth-box { width:380px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:34px 30px; }
+.auth-box .brand { font-family:'Frank Ruhl Libre',serif; font-size:1.3rem; color:var(--primary); margin-bottom:4px; }
+.muted { color:var(--ink-soft); font-size:.85rem; }
+.error-msg { color:var(--danger); font-size:.85rem; margin-top:8px; }
+.success-msg { color:var(--success); font-size:.85rem; margin-top:8px; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.chip { border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:.82rem; cursor:pointer; user-select:none; }
+.chip.selected { background:var(--primary); color:#fff; border-color:var(--primary); }
+.toolbar { display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap; }
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:50; }
+.modal { background:#fff; border-radius:var(--radius); padding:26px; width:480px; max-width:92vw; max-height:86vh; overflow-y:auto; }
+.empty-state { text-align:center; padding:40px 20px; color:var(--ink-soft); }
+.config-banner { background:var(--warn-bg); color:var(--warn); padding:10px 16px; font-size:.85rem; text-align:center; }
+</style>
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="brand">מערכת הפניות</div>
+      <nav id="nav">
+        <a data-view="dashboard" class="active" data-full-only>דשבורד</a>
+        <a data-view="leads" data-full-only>לידים והפניות</a>
+        <a data-view="lawyers" data-full-only>עורכי דין</a>
+        <a data-view="mmfiles">רשלנות רפואית (פייל)</a>
+        <a data-view="settings">הגדרות</a>
+      </nav>
+      <div class="user-info">מחובר/ת כמנהל<div><a id="logoutLink" style="color:#E3B07A; cursor:pointer;">התנתקות</a></div></div>
+    </div>
+    <div class="main" id="main"></div>
+  </div>
+  <div id="modalRoot"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+/* ======================================================================
+   הגדרות - יש להחליף את הערכים כאן בערכים מפרויקט ה-Firebase שלך
+   (איך משיגים אותם - ראה SETUP_GUIDE.md)
+   ====================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDd8rcBAPysNvsGsydUhB5AXnqIw_RwU14",
+  authDomain: "stp-lids.firebaseapp.com",
+  projectId: "stp-lids",
+  storageBucket: "stp-lids.firebasestorage.app",
+  messagingSenderId: "885779964489",
+  appId: "1:885779964489:web:cc8dd3ceed61093b711598",
+};
+
+// EmailJS - לשליחת מיילים אמיתיים (הודעה על הפניה חדשה). ראה SETUP_GUIDE.md
+const EMAILJS_PUBLIC_KEY = "m2oBUJO8cggCkMZg-";
+const EMAILJS_SERVICE_ID = "service_jb3mg4k";
+const EMAILJS_TEMPLATE_NEW_LEAD = "template_7540rlq"; // תבנית עם משתנים: to_email, lawyer_name, practice_area, region, response_link
+const EMAILJS_TEMPLATE_FREE_MSG = "template_l0xub2e"; // תבנית שנייה (אופציונלי) למייל חופשי מהמערכת - משתנים: to_email, lawyer_name, subject, message
+
+// כתובת הבסיס של האתר שבו מתארחים דפי המערכת (ללא / בסוף) - לבניית קישורים בתוך מיילים
+const APP_BASE_URL = "https://cheery-gecko-42a573.netlify.app"; // לדוגמה: https://leads.yourfirm.co.il
+
+// כתובת Webhook מ-Zapier ("Webhooks by Zapier" → Catch Hook) - לשליחת התראת וואטסאפ לעו"ד בכל הפצת ליד.
+// השאר ריק/PASTE כדי לדלג על זה. ראה SETUP_GUIDE.md להקמה מלאה.
+const ZAPIER_LEAD_WEBHOOK_URL = "PASTE_ZAPIER_WEBHOOK_URL_HERE";
+
+/* ====================================================================== */
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+if (typeof emailjs !== "undefined" && EMAILJS_PUBLIC_KEY && !EMAILJS_PUBLIC_KEY.startsWith("PASTE_")) {
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+}
+
+function isConfigured() {
+  return !firebaseConfig.apiKey.startsWith("PASTE_");
+}
+
+function showConfigWarningIfNeeded() {
+  if (!isConfigured()) {
+    const banner = document.createElement("div");
+    banner.className = "config-banner";
+    banner.textContent = "⚠ המערכת עדיין לא מחוברת ל-Firebase - יש להשלים את ההגדרות בראש הקובץ (ראו SETUP_GUIDE.md)";
+    document.body.prepend(banner);
+  }
+}
+
+const STATUS_LABELS = {
+  new: "ליד חדש", offered: "הופץ - ממתין לתגובה", accepted: "התקבל - ממתין לדיווח",
+  declined: "נדחה", sla_expired: "פג תוקף התגובה", meeting_scheduled: "נקבעה פגישה",
+  case_opened: "נפתח תיק", not_realized: "לא התממש", not_collected: "טרם נגבה",
+  partially_collected: "נגבה חלקית", fully_collected: "נגבה במלואו", closed_no_payment: "נסגר ללא גבייה",
+  active: "פעיל", inactive: "לא פעיל", pending: "ממתין לאישור", blocked: "חסום",
+  offer_pending: "ממתין לתגובה", offer_accepted: "אישר/ה קבלה", offer_declined: "דחה/תה",
+  offer_meeting_scheduled: "נקבעה פגישה", offer_case_opened: "נפתח תיק",
+  offer_not_realized: "לא התממש", offer_closed_other_won: "נסגר - טופל ע\"י עו\"ד אחר",
+  mm_open: "פתוח - בטיפול", mm_closed: "סגור",
+};
+function statusLabel(s) { return STATUS_LABELS[s] || s; }
+
+// שליחת אירוע ל-Zapier (להפעלת אוטומציה כמו שליחת וואטסאפ). לא עוצר את התהליך הראשי אם נכשל/לא מוגדר.
+async function notifyZapier(payload) {
+  if (!ZAPIER_LEAD_WEBHOOK_URL || ZAPIER_LEAD_WEBHOOK_URL.startsWith("PASTE_")) return;
+  try {
+    await fetch(ZAPIER_LEAD_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (ex) {
+    console.log("שליחת Webhook ל-Zapier נכשלה (לא עוצר את התהליך):", ex.message);
+  }
+}
+
+// הופך טקסט חופשי שהגיע ממשתמש (שם, הערה, תיאור וכו') לבטוח להצגה ב-HTML, כדי שלא יוכל להריץ קוד.
+// חובה לעטוף בזה כל ערך שמקורו בקלט משתמש (גם אם הוזן ע"י עו"ד/מבקר לא מזוהה) לפני הכנסתו ל-innerHTML.
+function esc(val) {
+  if (val === null || val === undefined) return "";
+  return String(val).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function fmtDate(ts) {
+  if (!ts) return "-";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString("he-IL");
+}
+
+let adminScope = "full"; // 'full' | 'mm_file' - נקבע בפועל ב-requireAdmin
+function isFullAdminScope() { return adminScope === "full"; }
+
+async function isAdminUser(user) {
+  if (!user || !user.email) return false;
+  const doc = await db.collection("admins").doc(user.email).get();
+  if (!doc.exists) return false;
+  adminScope = doc.data().scope || "full";
+  return true;
+}
+
+async function getLawyerDoc(user) {
+  if (!user || !user.email) return null;
+  const doc = await db.collection("lawyers").doc(user.email).get();
+  return doc.exists ? { id: doc.id, ...doc.data() } : null;
+}
+
+// שומר על עמוד מנהל - מפנה להתחברות אם לא מחובר/לא מנהל
+function requireAdmin(onReady) {
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) return (window.location.href = "admin-login.html");
+    const ok = await isAdminUser(user);
+    if (!ok) {
+      alert("המשתמש המחובר אינו מוגדר כמנהל במערכת.");
+      await auth.signOut();
+      return (window.location.href = "admin-login.html");
+    }
+    onReady(user);
+  });
+}
+
+// שומר על עמוד עו"ד - מפנה להתחברות אם לא מחובר/לא רשום/לא פעיל
+function requireLawyer(onReady) {
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) return (window.location.href = "lawyer-login.html");
+    const lawyer = await getLawyerDoc(user);
+    if (!lawyer || lawyer.status !== "active") {
+      alert("חשבון זה אינו רשום/פעיל כעורך דין שותף במערכת.");
+      await auth.signOut();
+      return (window.location.href = "lawyer-login.html");
+    }
+    onReady(user, lawyer);
+  });
+}
+
+function logout(redirectTo) {
+  auth.signOut().then(() => (window.location.href = redirectTo));
+}
+
+function newId() {
+  return db.collection("_").doc().id; // דרך פשוטה לקבל מזהה רנדומלי חזק מ-Firestore
+}
+
+// שולף בבת אחת את כל ההצעות (offers) מכל הלידים (collection group), ומקבץ אותן לפי מזהה ליד
+async function fetchAllOffers() {
+  const snap = await db.collectionGroup("offers").get();
+  const byLead = {};
+  snap.docs.forEach((d) => {
+    const leadId = d.ref.parent.parent.id;
+    byLead[leadId] = byLead[leadId] || {};
+    byLead[leadId][d.id] = d.data(); // d.id = כתובת המייל של העו"ד (מזהה מסמך ההצעה)
+  });
+  return byLead;
+}
+showConfigWarningIfNeeded();
+const mainEl = document.getElementById("main");
+const modalRoot = document.getElementById("modalRoot");
+let masterData = { practiceAreas: [], regions: [] };
+let currentUser = null;
+const ALL_COUNTRY = "כל הארץ"; // ערך מיוחד באזורי עיסוק - עו"ד עם ערך זה מתאים לכל אזור
+
+document.getElementById("nav").addEventListener("click", (e) => {
+  const link = e.target.closest("a[data-view]");
+  if (!link) return;
+  document.querySelectorAll("#nav a").forEach((a) => a.classList.remove("active"));
+  link.classList.add("active");
+  render(link.dataset.view);
+});
+document.getElementById("logoutLink").addEventListener("click", () => logout("admin-login.html"));
+
+function closeModal() { modalRoot.innerHTML = ""; }
+function openModal(html) {
+  modalRoot.innerHTML = `<div class="modal-backdrop" id="backdrop"><div class="modal">${html}</div></div>`;
+  document.getElementById("backdrop").addEventListener("click", (e) => { if (e.target.id === "backdrop") closeModal(); });
+}
+
+async function loadMasterData() {
+  const [pa, rg] = await Promise.all([db.collection("practiceAreas").get(), db.collection("regions").get()]);
+  masterData.practiceAreas = pa.docs.map((d) => ({ id: d.id, ...d.data() }));
+  masterData.regions = rg.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+let mmMasterData = { collectionStatuses: [], closureReasons: [] };
+async function loadMmMasterData() {
+  const [cs, cr] = await Promise.all([db.collection("mmCollectionStatuses").get(), db.collection("mmClosureReasons").get()]);
+  mmMasterData.collectionStatuses = cs.docs.map((d) => ({ id: d.id, ...d.data() }));
+  mmMasterData.closureReasons = cr.docs.map((d) => ({ id: d.id, ...d.data() }));
+  // זריעת ברירת מחדל בפעם הראשונה בלבד, כדי שלא תתחיל מרשימות ריקות
+  if (isFullAdminScope() || adminScope === "mm_file") {
+    if (mmMasterData.collectionStatuses.length === 0) {
+      const defaults = ["בטיפול משפטי", "הוגש כתב תביעה", "ממתין לפסק דין/הסדר", "ממתין לתשלום", "שולם חלקית", "שולם במלואו"];
+      for (const name of defaults) await db.collection("mmCollectionStatuses").add({ name });
+      const cs2 = await db.collection("mmCollectionStatuses").get();
+      mmMasterData.collectionStatuses = cs2.docs.map((d) => ({ id: d.id, ...d.data() }));
+    }
+    if (mmMasterData.closureReasons.length === 0) {
+      const defaults = ["טופל בהצלחה - שכ\"ט נגבה", "הלקוח ביטל", "הועבר לטיפול אחר", "אחר"];
+      for (const name of defaults) await db.collection("mmClosureReasons").add({ name });
+      const cr2 = await db.collection("mmClosureReasons").get();
+      mmMasterData.closureReasons = cr2.docs.map((d) => ({ id: d.id, ...d.data() }));
+    }
+  }
+}
+function optionsHtml(items, selected) {
+  return items.map((i) => `<option value="${i.name}" ${i.name === selected ? "selected" : ""}>${i.name}</option>`).join("");
+}
+function multiChipSelector(id, items, selected) {
+  return `<div class="chips" id="${id}">${items.map((i) => `<span class="chip ${selected.includes(i.name) ? "selected" : ""}" data-value="${i.name}">${i.name}</span>`).join("")}</div>`;
+}
+function wireChips(id) { document.querySelectorAll(`#${id} .chip`).forEach((c) => c.addEventListener("click", () => c.classList.toggle("selected"))); }
+function getSelectedChips(id) { return Array.from(document.querySelectorAll(`#${id} .chip.selected`)).map((c) => c.dataset.value); }
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+// ===================== דשבורד =====================
+async function renderDashboard() {
+  mainEl.innerHTML = `<h1>דשבורד</h1><p class="muted">טוען נתונים...</p>`;
+  const [leadsSnap, casesSnap, lawyersSnap, offersByLead] = await Promise.all([
+    db.collection("leads").get(), db.collection("cases").get(), db.collection("lawyers").get(), fetchAllOffers(),
+  ]);
+  const leads = leadsSnap.docs.map((d) => ({ id: d.id, ...d.data(), offers: offersByLead[d.id] || {} }));
+  const cases = casesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const lawyers = lawyersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  // בדיקת SLA שחלף, ותזכורות לעו"ד שאישרו קבלה ולא התקדמו - מתבצע בכל טעינת דשבורד
+  // (ראו הערה ב-SETUP_GUIDE על המגבלה של פתרון ללא שרת - אין "שעון רקע" אמיתי, רק בכניסה לדשבורד)
+  const now = new Date();
+  const REMINDER_AFTER_HOURS = 48;
+  for (const lead of leads) {
+    if (lead.status === "offered" && lead.slaDeadline && lead.slaDeadline.toDate() < now) {
+      await db.collection("leads").doc(lead.id).update({ status: "sla_expired" });
+      await db.collection("statusLogs").add({ leadId: lead.id, fromStatus: "offered", toStatus: "sla_expired", actor: "system", at: firebase.firestore.FieldValue.serverTimestamp() });
+      lead.status = "sla_expired";
+    }
+
+    for (const [email, o] of Object.entries(lead.offers || {})) {
+      if (o.status !== "offer_accepted" || !o.respondedAt || o.reminderSentAt) continue;
+      const hoursSince = (now - o.respondedAt.toDate()) / 36e5;
+      if (hoursSince < REMINDER_AFTER_HOURS) continue;
+      const lawyerDoc = await db.collection("lawyers").doc(email).get();
+      if (!lawyerDoc.exists) continue;
+      const lawyer = lawyerDoc.data();
+      if (typeof emailjs !== "undefined" && EMAILJS_SERVICE_ID && !EMAILJS_SERVICE_ID.startsWith("PASTE_")
+          && EMAILJS_TEMPLATE_FREE_MSG && !EMAILJS_TEMPLATE_FREE_MSG.startsWith("PASTE_")) {
+        try {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_FREE_MSG, {
+            to_email: email, lawyer_name: lawyer.fullName,
+            subject: `תזכורת - הפניה ${lead.leadNumber ? "#" + lead.leadNumber : ""} ממתינה לעדכון`,
+            message: `שלום ${lawyer.fullName},\n\nלפני יומיים אישרת קבלה של הפניה בתחום ${lead.practiceArea}, וטרם עודכן סטטוס נוסף (נקבעה פגישה / נפתח תיק).\nנשמח לעדכון בהקדם באזור האישי שלך:\n${APP_BASE_URL}/lawyer-login.html`,
+          });
+        } catch (ex) { console.log("שליחת תזכורת נכשלה:", ex.message); }
+      }
+      await db.collection("leads").doc(lead.id).collection("offers").doc(email).update({ reminderSentAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+  }
+
+  // דוח שבועי אוטומטי למנהלים - נבדק בכל כניסה לדשבורד (אין שעון רקע אמיתי, ראו SETUP_GUIDE)
+  try {
+    const WEEKLY_REPORT_DAYS = 7;
+    const reportDoc = await db.collection("counters").doc("weeklyReport").get();
+    const lastSentAt = reportDoc.exists && reportDoc.data().lastSentAt ? reportDoc.data().lastSentAt.toDate() : null;
+    const daysSince = lastSentAt ? (now - lastSentAt) / (24 * 36e5) : Infinity;
+    if (daysSince >= WEEKLY_REPORT_DAYS
+        && typeof emailjs !== "undefined" && EMAILJS_SERVICE_ID && !EMAILJS_SERVICE_ID.startsWith("PASTE_")
+        && EMAILJS_TEMPLATE_FREE_MSG && !EMAILJS_TEMPLATE_FREE_MSG.startsWith("PASTE_")) {
+      const CLOSED = ["payment_received_full", "closed_no_payment", "not_realized"];
+      const totalCollected = cases.reduce((s, c) => s + (Number(c.amountPaid) || 0), 0);
+      const totalPending = cases.filter((c) => !CLOSED.includes(c.collectionStatus)).reduce((s, c) => s + ((Number(c.feeAgreed) || 0) - (Number(c.amountPaid) || 0)), 0);
+      const weekAgo = new Date(now - 7 * 24 * 36e5);
+      const newThisWeek = leads.filter((l) => l.createdAt && l.createdAt.toDate() > weekAgo).length;
+      const casesThisWeek = cases.filter((c) => c.openedAt && c.openedAt.toDate() > weekAgo).length;
+      const conversion = leads.length ? Math.round((cases.length / leads.length) * 1000) / 10 : 0;
+
+      const summary = `דוח שבועי - מערכת הפניות\n\n` +
+        `לידים חדשים השבוע: ${newThisWeek}\n` +
+        `תיקים שנפתחו השבוע: ${casesThisWeek}\n` +
+        `סה"כ לידים במערכת: ${leads.length}\n` +
+        `סה"כ תיקים שנפתחו: ${cases.length}\n` +
+        `אחוז המרה כולל: ${conversion}%\n` +
+        `עורכי דין פעילים: ${lawyers.filter((l) => l.status === "active").length} מתוך ${lawyers.length}\n` +
+        `נגבה בפועל (סה"כ): ₪${totalCollected.toLocaleString()}\n` +
+        `ממתין לגבייה (סה"כ): ₪${totalPending.toLocaleString()}\n\n` +
+        `לפרטים מלאים ודוח מלא להורדה, היכנסו לדשבורד:\n${APP_BASE_URL}/admin-login.html`;
+
+      const adminsSnap = await db.collection("admins").get();
+      for (const adminDoc of adminsSnap.docs) {
+        try {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_FREE_MSG, {
+            to_email: adminDoc.id, lawyer_name: "מנהל/ת",
+            subject: "דוח שבועי - מערכת ההפניות",
+            message: summary,
+          });
+        } catch (ex) { console.log("שליחת דוח שבועי נכשלה עבור " + adminDoc.id + ":", ex.message); }
+      }
+      await db.collection("counters").doc("weeklyReport").set({ lastSentAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+  } catch (ex) { console.log("בדיקת הדוח השבועי נכשלה:", ex.message); }
+
+  const byStatus = {};
+  leads.forEach((l) => (byStatus[l.status] = (byStatus[l.status] || 0) + 1));
+  const totalFeesAgreed = cases.reduce((s, c) => s + (Number(c.feeAgreed) || 0), 0);
+  const totalCollected = cases.reduce((s, c) => s + (Number(c.amountPaid) || 0), 0);
+  const conversion = leads.length ? Math.round((cases.length / leads.length) * 1000) / 10 : 0;
+
+  const caseCountByLawyer = {};
+  cases.forEach((c) => (caseCountByLawyer[c.lawyerEmail] = (caseCountByLawyer[c.lawyerEmail] || 0) + 1));
+
+  // סה"כ הפניות שהועברו לכל עו"ד (לא רק אלו שהפכו לתיק) - נספר מתוך מפת ה-offers של כל הלידים
+  const referralCountByLawyer = {};
+  leads.forEach((l) => {
+    Object.keys(l.offers || {}).forEach((email) => (referralCountByLawyer[email] = (referralCountByLawyer[email] || 0) + 1));
+  });
+
+  const topLawyers = Object.entries(caseCountByLawyer)
+    .map(([email, count]) => ({ lawyer: lawyers.find((l) => l.id === email), casesOpened: count, referrals: referralCountByLawyer[email] || 0 }))
+    .filter((x) => x.lawyer).sort((a, b) => b.casesOpened - a.casesOpened).slice(0, 5);
+
+  const statusRows = Object.entries(byStatus).map(([s, c]) => `<tr><td><span class="badge ${s}">${statusLabel(s)}</span></td><td>${c}</td></tr>`).join("");
+  const topRows = topLawyers.map((x) => `<tr><td>${esc(x.lawyer.fullName)}</td><td>${x.referrals}</td><td>${x.casesOpened}</td><td>${"★".repeat(Math.round(x.lawyer.rating || 0))}</td></tr>`).join("");
+
+  window._dashboardData = { leads, cases, lawyers };
+
+  window._backupData = { leads, cases, lawyers };
+
+  mainEl.innerHTML = `
+    <div class="toolbar" style="justify-content:space-between;"><h1 style="margin:0;">דשבורד</h1>
+      <button class="btn secondary" onclick="exportFullBackup()">ייצוא דוח/גיבוי מלא (Excel)</button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="num">${leads.length}</div><div class="label">סה"כ לידים</div></div>
+      <div class="stat" style="cursor:pointer" onclick="showCasesBreakdown()" title="לחץ לפירוט לפי תחום עיסוק ועו&quot;ד"><div class="num">${cases.length}</div><div class="label">תיקים שנפתחו 🔍</div></div>
+      <div class="stat"><div class="num">${conversion}%</div><div class="label">אחוז המרה לתיק</div></div>
+      <div class="stat"><div class="num">${lawyers.filter((l) => l.status === "active").length}/${lawyers.length}</div><div class="label">עורכי דין פעילים</div></div>
+      <div class="stat"><div class="num">₪${totalCollected.toLocaleString()}</div><div class="label">נגבה בפועל</div></div>
+      <div class="stat"><div class="num">₪${(totalFeesAgreed - totalCollected).toLocaleString()}</div><div class="label">ממתין לגבייה</div></div>
+    </div>
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+      <div class="card" style="flex:1; min-width:280px;"><h3>לידים לפי סטטוס</h3><table><tbody>${statusRows || '<tr><td class="muted">אין נתונים עדיין</td></tr>'}</tbody></table></div>
+      <div class="card" style="flex:1; min-width:280px;"><h3>עורכי דין מובילים</h3><table><thead><tr><th>שם</th><th>הפניות שהועברו</th><th>תיקים</th><th>דירוג</th></tr></thead><tbody>${topRows || '<tr><td colspan="4" class="muted">אין עדיין תיקים</td></tr>'}</tbody></table></div>
+    </div>`;
+}
+
+function excelDate(ts) {
+  return ts && ts.toDate ? ts.toDate().toLocaleString("he-IL") : "";
+}
+
+async function exportFullBackup() {
+  const { leads, cases, lawyers } = window._backupData;
+  const nameByEmail = {};
+  lawyers.forEach((l) => (nameByEmail[l.id] = l.fullName));
+
+  // שליפת פרטי לקוח מה-subcollection הפרטי לכל ליד (גם לצורך גיבוי מלא)
+  const contactDocs = await Promise.all(leads.map((l) => db.collection("leads").doc(l.id).collection("private").doc("contact").get()));
+
+  const leadsRows = leads.map((l, i) => ({
+    "מספר הפניה": l.leadNumber || "", "תאריך קבלה": excelDate(l.createdAt),
+    "שם לקוח": contactDocs[i].exists ? contactDocs[i].data().clientName : "", "טלפון לקוח": contactDocs[i].exists ? contactDocs[i].data().clientPhone : "",
+    "תחום עיסוק": l.practiceArea, "אזור": l.region || "", "תיאור": l.caseDescription || "",
+    "סטטוס": statusLabel(l.status), "תאריך פתיחת תיק": excelDate(l.caseOpenedAt),
+  }));
+
+  const offersRows = [];
+  leads.forEach((l) => {
+    Object.entries(l.offers || {}).forEach(([email, o]) => {
+      offersRows.push({
+        "מספר הפניה": l.leadNumber || "", "עו\"ד": nameByEmail[email] || email, "אימייל עו\"ד": email,
+        "סטטוס הצעה": statusLabel(o.status), "נשלח בתאריך": excelDate(o.offeredAt), "נצפה בתאריך": excelDate(o.viewedAt), "נענה בתאריך": excelDate(o.respondedAt),
+        "תאריך פגישה": excelDate(o.meetingDate), "תזכורת נשלחה": excelDate(o.reminderSentAt),
+      });
+    });
+  });
+
+  const casesRows = cases.map((c) => {
+    const lead = leads.find((l) => l.id === c.leadId) || {};
+    return {
+      "מספר הפניה": lead.leadNumber || "", "עו\"ד": nameByEmail[c.lawyerEmail] || c.lawyerEmail,
+      "תאריך פתיחה": excelDate(c.openedAt), "שכ\"ט שסוכם": c.feeAgreed ?? "", "סטטוס גבייה": statusLabel(c.collectionStatus),
+      "שולם בפועל": c.amountPaid || 0, "הערות": c.notes || "",
+    };
+  });
+
+  const lawyersRows = lawyers.map((l) => ({
+    "שם מלא": l.fullName, "אימייל": l.id, "טלפון": l.phone || "",
+    "תחומי עיסוק": (l.practiceAreas || []).join(", "), "אזורים": (l.regions || []).join(", "),
+    "דירוג": l.rating || 0, "סטטוס": statusLabel(l.status), "תנאי שכ\"ט": l.feeTerms || "",
+    "רישיון": l.licenseNumber || "", "כתובת משרד": l.officeAddress || "", "שנות ניסיון": l.experienceYears || "",
+  }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(leadsRows), "לידים");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(offersRows), "הפניות");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(casesRows), "תיקים");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(lawyersRows), "עורכי דין");
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `גיבוי-מערכת-הפניות-${dateStr}.xlsx`);
+}
+
+function showCasesBreakdown() {
+  const { leads, cases, lawyers } = window._dashboardData;
+  const leadById = {};
+  leads.forEach((l) => (leadById[l.id] = l));
+  const lawyerById = {};
+  lawyers.forEach((l) => (lawyerById[l.id] = l));
+
+  // קיבוץ: תחום עיסוק -> עו"ד -> רשימת תיקים
+  const byArea = {};
+  cases.forEach((c) => {
+    const lead = leadById[c.leadId];
+    const area = lead ? lead.practiceArea : "לא ידוע";
+    byArea[area] = byArea[area] || {};
+    byArea[area][c.lawyerEmail] = byArea[area][c.lawyerEmail] || [];
+    byArea[area][c.lawyerEmail].push(c);
+  });
+
+  const areaBlocks = Object.entries(byArea).map(([area, byLawyer]) => {
+    const lawyerRows = Object.entries(byLawyer).map(([email, caseList]) => {
+      const lawyerName = lawyerById[email] ? lawyerById[email].fullName : email;
+      return caseList.map((c) => `<tr><td>${esc(lawyerName)}</td><td>${c.openedAt ? fmtDate(c.openedAt) : "-"}</td>
+        <td><span class="badge ${c.collectionStatus}">${statusLabel(c.collectionStatus)}</span></td></tr>`).join("");
+    }).join("");
+    return `<h3 style="margin-top:18px;">${esc(area)}</h3>
+      <table><thead><tr><th>עו"ד</th><th>תאריך פתיחת תיק</th><th>סטטוס גבייה</th></tr></thead><tbody>${lawyerRows}</tbody></table>`;
+  }).join("") || '<p class="muted">אין עדיין תיקים פתוחים</p>';
+
+  openModal(`<h2>תיקים שנפתחו - לפי תחום עיסוק</h2>${areaBlocks}
+    <div style="margin-top:18px;"><button class="btn secondary" onclick="closeModal()">סגירה</button></div>`);
+}
+
+// ===================== לידים =====================
+let leadsFilter = {};
+
+async function renderLeads() {
+  mainEl.innerHTML = `<h1>לידים והפניות</h1><p class="muted">טוען...</p>`;
+  await loadMasterData();
+  await refreshLeadsList();
+}
+
+async function refreshLeadsList() {
+  let q = db.collection("leads").orderBy("createdAt", "desc");
+  const [snap, lawyersSnap, offersByLead] = await Promise.all([q.get(), db.collection("lawyers").get(), fetchAllOffers()]);
+  let leads = snap.docs.map((d) => ({ id: d.id, ...d.data(), offers: offersByLead[d.id] || {} }));
+  if (leadsFilter.status) leads = leads.filter((l) => l.status === leadsFilter.status);
+
+  const nameByEmail = {};
+  lawyersSnap.docs.forEach((d) => (nameByEmail[d.id] = d.data().fullName));
+
+  // פרטי הלקוח (שם+טלפון) חיים רק ב-subcollection הפרטי - שולפים אותם כאן לתצוגת המנהל בלבד
+  const contactDocs = await Promise.all(leads.map((l) => db.collection("leads").doc(l.id).collection("private").doc("contact").get()));
+  contactDocs.forEach((cd, i) => { if (cd.exists) Object.assign(leads[i], cd.data()); });
+
+  const statusOptions = ["new","offered","accepted","declined","sla_expired","meeting_scheduled","case_opened","not_realized"];
+  const now = new Date();
+  const rows = leads.map((l) => {
+    const offers = l.offers || {};
+    const offerBadges = Object.entries(offers).map(([email, o]) =>
+      `<span class="badge ${o.status}" title="${esc(email)}${o.viewedAt ? " · נצפה" : ""}">${o.viewedAt ? "👁 " : ""}${esc((nameByEmail[email] || email).split(" ")[0])}: ${statusLabel(o.status)}</span>`
+    ).join(" ") || '<span class="muted">טרם הופץ</span>';
+
+    // תאריך/י פגישה שנקבעו (יכול להיות יותר מעו"ד אחד במקביל) - מודגש באדום אם התאריך כבר עבר
+    const meetings = Object.values(offers).filter((o) => o.status === "offer_meeting_scheduled" && o.meetingDate);
+    const meetingHtml = meetings.length
+      ? meetings.map((o) => {
+          const overdue = o.meetingDate.toDate() < now;
+          return `<span${overdue ? ' style="color:var(--danger); font-weight:700;"' : ""}>${fmtDate(o.meetingDate)}</span>`;
+        }).join(", ")
+      : "-";
+
+    return `<tr style="cursor:pointer" onclick="openLeadDetail('${l.id}')">
+      <td>${l.leadNumber ? "#" + Number(l.leadNumber) : "-"}</td>
+      <td>${fmtDate(l.createdAt)}</td>
+      <td>${esc(l.clientName) || "-"}</td><td>${esc(l.clientPhone) || "-"}</td>
+      <td>${esc(l.practiceArea)}</td><td>${esc(l.region) || "-"}</td>
+      <td><span class="badge ${l.status}">${statusLabel(l.status)}</span></td>
+      <td>${meetingHtml}</td>
+      <td>${offerBadges}</td>
+    </tr>`;
+  }).join("");
+
+  mainEl.innerHTML = `
+    <div class="toolbar" style="justify-content:space-between;"><h1 style="margin:0;">לידים והפניות</h1><button class="btn accent" onclick="openNewLeadModal()">+ ליד חדש</button></div>
+    <div class="toolbar">
+      <select id="statusFilter" style="width:220px;">
+        <option value="">כל הסטטוסים</option>
+        ${statusOptions.map((s) => `<option value="${s}" ${leadsFilter.status === s ? "selected" : ""}>${statusLabel(s)}</option>`).join("")}
+      </select>
+    </div>
+    <div class="card" style="overflow-x:auto;"><table><thead><tr><th>מס'</th><th>תאריך קבלה</th><th>שם לקוח</th><th>טלפון</th><th>תחום</th><th>אזור</th><th>סטטוס</th><th>תאריך פגישה</th><th>הופצה אל</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="9" class="muted">אין לידים להצגה</td></tr>'}</tbody></table></div>`;
+
+  document.getElementById("statusFilter").addEventListener("change", (e) => { leadsFilter.status = e.target.value; refreshLeadsList(); });
+}
+
+function openNewLeadModal() {
+  openModal(`
+    <h2>ליד חדש</h2>
+    <form id="newLeadForm">
+      <label>שם הלקוח</label><input id="clientName" required>
+      <label>טלפון הלקוח</label><input id="clientPhone" required>
+      <label>תחום עיסוק</label><select id="practiceArea" required>${optionsHtml(masterData.practiceAreas)}</select>
+      <label>אזור גאוגרפי</label><select id="region"><option value="">לא צוין</option>${optionsHtml(masterData.regions)}</select>
+      <label>תיאור המקרה</label><textarea id="caseDescription" placeholder="פרטים שיוצגו לעו&quot;ד (ללא פרטי לקוח מזהים)"></textarea>
+      <div class="error-msg" id="err"></div>
+      <div style="display:flex; gap:10px; margin-top:18px;"><button class="btn" type="submit">שמירה</button><button class="btn secondary" type="button" onclick="closeModal()">ביטול</button></div>
+    </form>`);
+
+  document.getElementById("newLeadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const clientName = document.getElementById("clientName").value;
+      const clientPhone = document.getElementById("clientPhone").value;
+
+      // מספר הפניה סידורי - נקבע בעסקה אטומית כדי שלא ייווצרו כפילויות
+      const counterRef = db.collection("counters").doc("leadCounter");
+      const leadNumber = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(counterRef);
+        const next = (snap.exists ? snap.data().value : 0) + 1;
+        tx.set(counterRef, { value: next });
+        return next;
+      });
+
+      const ref = await db.collection("leads").add({
+        leadNumber,
+        practiceArea: document.getElementById("practiceArea").value,
+        region: document.getElementById("region").value,
+        caseDescription: document.getElementById("caseDescription").value,
+        status: "new", assignedLawyerEmail: null, offerHistory: [],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentUser.email,
+      });
+      // פרטי הלקוח המלאים נשמרים רק כאן, ב-subcollection נפרד (לא נחשפים לעו"ד לפני אישור קבלה)
+      await ref.collection("private").doc("contact").set({ clientName, clientPhone });
+      await db.collection("statusLogs").add({ leadId: ref.id, fromStatus: null, toStatus: "new", actor: "admin", performedBy: currentUser.email, at: firebase.firestore.FieldValue.serverTimestamp() });
+      closeModal();
+      openLeadDetail(ref.id);
+    } catch (ex) { document.getElementById("err").textContent = ex.message; }
+  });
+}
+
+// מחזיר true רק כשמישהו כבר פתח תיק בפועל - עד לשלב הזה אפשר להמשיך להוסיף עו"ד נוספים,
+// וכמה עו"ד יכולים לאשר קבלה/לקבוע פגישה במקביל
+function leadHasWinner(lead) {
+  return lead.status === "case_opened";
+}
+
+async function openLeadDetail(id) {
+  const [doc, contactDoc, offersSnap] = await Promise.all([
+    db.collection("leads").doc(id).get(),
+    db.collection("leads").doc(id).collection("private").doc("contact").get(),
+    db.collection("leads").doc(id).collection("offers").get(),
+  ]);
+  const lead = { id, ...doc.data(), ...(contactDoc.exists ? contactDoc.data() : {}) };
+  const offers = {};
+  offersSnap.docs.forEach((d) => (offers[d.id] = d.data()));
+  const historySnap = await db.collection("statusLogs").where("leadId", "==", id).get();
+  const history = historySnap.docs.map((d) => d.data()).sort((a, b) => (a.at && b.at ? a.at.toMillis() - b.at.toMillis() : 0));
+
+  // --- טבלת ההצעות שנשלחו עד כה (ושמות אמיתיים להיסטוריה) ---
+  const offerEmails = Object.keys(offers);
+  const lawyerDocs = offerEmails.length ? await Promise.all(offerEmails.map((em) => db.collection("lawyers").doc(em).get())) : [];
+  const nameByEmail = {};
+  lawyerDocs.forEach((d, i) => (nameByEmail[offerEmails[i]] = d.exists ? d.data().fullName : offerEmails[i]));
+
+  const historyRows = history.map((h) => {
+    let who = "מערכת";
+    if (h.actor === "admin") who = h.performedBy ? `מנהל (${esc(h.performedBy)})` : "מנהל";
+    else if (h.actor === "lawyer") who = esc((h.lawyerEmail && nameByEmail[h.lawyerEmail]) || h.lawyerEmail || 'עו"ד');
+    return `<tr><td>${h.at ? fmtDate(h.at) : "-"}</td><td>${statusLabel(h.toStatus)}</td><td>${who}</td></tr>`;
+  }).join("");
+
+  let offersTableHtml = "";
+  if (offerEmails.length) {
+    const rows = offerEmails.map((em) => {
+      const o = offers[em];
+      const resendBtn = o.status === "offer_pending" && !leadHasWinner(lead)
+        ? `<button class="btn small secondary" onclick="resendLeadEmail('${id}','${esc(em)}')">שלח שוב</button>`
+        : "";
+      return `<tr>
+        <td>${esc(nameByEmail[em])}</td>
+        <td><span class="badge ${o.status}">${statusLabel(o.status)}</span></td>
+        <td>${o.offeredAt ? fmtDate(o.offeredAt) : "-"}</td>
+        <td>${o.viewedAt ? "👁 " + fmtDate(o.viewedAt) : '<span class="muted">טרם נצפה</span>'}</td>
+        <td>${o.meetingDate ? fmtDate(o.meetingDate) : "-"}</td>
+        <td>${o.reminderSentAt ? "✓ " + fmtDate(o.reminderSentAt) : "-"}</td>
+        <td>${resendBtn}</td>
+      </tr>`;
+    }).join("");
+    offersTableHtml = `<h3 style="margin-top:20px;">הפניות שנשלחו</h3>
+      <table><thead><tr><th>עו"ד</th><th>סטטוס</th><th>נשלח בתאריך</th><th>נצפה בתאריך</th><th>תאריך פגישה</th><th>תזכורת נשלחה</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  // --- אזור הוספת מועמדים נוספים - זמין כל עוד אף עו"ד לא "זכה" בליד ---
+  let actionHtml = "";
+  if (!leadHasWinner(lead)) {
+    actionHtml = `<div id="candidatesBox"><p class="muted">טוען עורכי דין מתאימים...</p></div>`;
+  }
+
+  openModal(`
+    <h2>פרטי הפניה ${lead.leadNumber ? "#" + Number(lead.leadNumber) : ""}</h2>
+    <p><b>לקוח:</b> ${esc(lead.clientName) || "-"} · ${esc(lead.clientPhone) || "-"}</p>
+    <p><b>תחום:</b> ${esc(lead.practiceArea)}${lead.region ? " · <b>אזור:</b> " + esc(lead.region) : ""}</p>
+    <p><b>תיאור:</b> ${esc(lead.caseDescription) || "-"}</p>
+    <p><b>סטטוס נוכחי:</b> <span class="badge ${lead.status}">${statusLabel(lead.status)}</span></p>
+    ${lead.caseOpenedAt ? `<p><b>תאריך פתיחת תיק:</b> ${fmtDate(lead.caseOpenedAt)}</p>` : ""}
+    ${offersTableHtml}
+    ${actionHtml}
+    <h3 style="margin-top:20px;">היסטוריה</h3>
+    <table><thead><tr><th>תאריך</th><th>סטטוס</th><th>בוצע ע"י</th></tr></thead><tbody>${historyRows || '<tr><td colspan="3" class="muted">אין היסטוריה</td></tr>'}</tbody></table>
+    <div style="margin-top:16px; display:flex; gap:10px;">
+      <button class="btn secondary" onclick="closeModal()">סגירה</button>
+      <button class="btn danger" onclick="deleteLead('${id}')">מחיקת ליד</button>
+    </div>`);
+
+  if (actionHtml) {
+    const lawyersSnap = await db.collection("lawyers").where("status", "==", "active").get();
+    let candidates = lawyersSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      .filter((l) => (l.practiceAreas || []).includes(lead.practiceArea))
+      .filter((l) => !lead.region || (l.regions || []).includes(lead.region) || (l.regions || []).includes(ALL_COUNTRY))
+      .filter((l) => !offerEmails.includes(l.id)); // לא מציגים שוב מי שכבר קיבל הצעה
+
+    const casesSnap = await db.collection("cases").get();
+    const allCases = casesSnap.docs.map((d) => d.data());
+    const CLOSED = ["payment_received_full", "closed_no_payment", "not_realized"];
+    candidates = candidates.map((c) => ({
+      ...c,
+      currentLoad: allCases.filter((cs) => cs.lawyerEmail === c.id && !CLOSED.includes(cs.collectionStatus)).length,
+    })).sort((a, b) => (b.rating || 0) - (a.rating || 0) || a.currentLoad - b.currentLoad);
+
+    const box = document.getElementById("candidatesBox");
+    if (!box) return;
+    if (candidates.length === 0) {
+      box.innerHTML = offerEmails.length
+        ? `<p class="muted">כל עורכי הדין המתאימים כבר קיבלו הצעה על ליד זה.</p>`
+        : `<p class="muted">לא נמצאו עורכי דין פעילים התואמים לתחום/אזור זה.</p>`;
+      return;
+    }
+    box.innerHTML = `<h3>${offerEmails.length ? "הוספת עורכי דין נוספים להפצה" : "עורכי דין מתאימים"}</h3>
+      <table><thead><tr><th></th><th>שם</th><th>דירוג</th><th>תיקים פתוחים</th></tr></thead><tbody>
+      ${candidates.map((c) => `<tr>
+          <td><input type="checkbox" class="candidate-chk" value="${esc(c.id)}"></td>
+          <td>${esc(c.fullName)}</td><td>${"★".repeat(Math.round(c.rating || 0)) || "-"}</td><td>${c.currentLoad}</td>
+        </tr>`).join("")}
+      </tbody></table>
+      <button class="btn accent small" onclick="assignLeadFromCheckboxes('${id}')" style="margin-top:8px;">שלח הפניה לנבחרים</button>`;
+  }
+}
+
+function assignLeadFromCheckboxes(leadId) {
+  const emails = Array.from(document.querySelectorAll(".candidate-chk:checked")).map((c) => c.value);
+  if (!emails.length) { alert("יש לסמן לפחות עו\"ד אחד."); return; }
+  assignLeadToMultiple(leadId, emails);
+}
+
+// שולח/מפיץ ליד למספר עורכי דין בו-זמנית. אפשר לקרוא שוב על אותו ליד כדי להוסיף מועמדים נוספים בהמשך.
+// כל עו"ד מקבל מסמך הצעה נפרד (subcollection) + טוקן מענה סודי נפרד (אוסף responseTokens) - כך שאין
+// שום דרך לנחש/להשפיע על ההצעה של עו"ד אחר, גם לא דרך שינוי פרמטר בקישור.
+async function assignLeadToMultiple(leadId, lawyerEmails) {
+  try {
+    const leadRef = db.collection("leads").doc(leadId);
+    const slaDeadline = firebase.firestore.Timestamp.fromDate(new Date(Date.now() + 48 * 3600 * 1000));
+
+    await leadRef.update({
+      status: "offered",
+      slaDeadline,
+      offeredLawyerEmails: firebase.firestore.FieldValue.arrayUnion(...lawyerEmails),
+    });
+
+    const leadDoc = await leadRef.get();
+    const lead = leadDoc.data();
+    const tokensByEmail = {};
+
+    const batch = db.batch();
+    for (const email of lawyerEmails) {
+      const token = newId();
+      tokensByEmail[email] = token;
+      batch.set(leadRef.collection("offers").doc(email), {
+        lawyerEmail: email, status: "offer_pending",
+        offeredAt: firebase.firestore.Timestamp.now(), respondedAt: null, responseToken: token,
+      });
+      batch.set(db.collection("responseTokens").doc(token), {
+        leadId, lawyerEmail: email, decision: null, decidedAt: null, viewedAt: null,
+        practiceArea: lead.practiceArea, region: lead.region || "", caseDescription: lead.caseDescription || "",
+      });
+    }
+    await batch.commit();
+
+    for (const email of lawyerEmails) {
+      await db.collection("statusLogs").add({ leadId, fromStatus: null, toStatus: "offered", actor: "admin", performedBy: currentUser.email, lawyerEmail: email, at: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+
+    for (const email of lawyerEmails) {
+      const lawyerDoc = await db.collection("lawyers").doc(email).get();
+      const lawyer = lawyerDoc.data();
+      const responseLink = `${APP_BASE_URL}/respond.html?token=${tokensByEmail[email]}`;
+      if (typeof emailjs !== "undefined" && EMAILJS_SERVICE_ID && !EMAILJS_SERVICE_ID.startsWith("PASTE_")) {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_NEW_LEAD, {
+          to_email: email, lawyer_name: lawyer.fullName,
+          practice_area: lead.practiceArea, region: lead.region || "", response_link: responseLink,
+          login_link: `${APP_BASE_URL}/lawyer-login.html`,
+        });
+      } else {
+        console.log("EmailJS לא מוגדר - קישור המענה שהיה אמור להישלח ל-" + email + ":", responseLink);
+      }
+      notifyZapier({
+        event: "lead_offered",
+        lawyerName: lawyer.fullName, lawyerEmail: email, lawyerPhone: lawyer.phone || "",
+        leadNumber: lead.leadNumber || "", practiceArea: lead.practiceArea, region: lead.region || "",
+        responseLink,
+      });
+    }
+    if (typeof emailjs === "undefined" || !EMAILJS_SERVICE_ID || EMAILJS_SERVICE_ID.startsWith("PASTE_")) {
+      alert("שימו לב: שליחת מייל אמיתית אינה מוגדרת עדיין (ראו SETUP_GUIDE). הקישורים הודפסו ל-console.");
+    }
+    closeModal();
+    refreshLeadsList();
+  } catch (ex) { alert("שגיאה: " + ex.message); }
+}
+
+async function resendLeadEmail(leadId, lawyerEmail) {
+  try {
+    const [leadDoc, offerDoc] = await Promise.all([
+      db.collection("leads").doc(leadId).get(),
+      db.collection("leads").doc(leadId).collection("offers").doc(lawyerEmail).get(),
+    ]);
+    const lead = leadDoc.data();
+    const offer = offerDoc.exists ? offerDoc.data() : null;
+    if (!offer || offer.status !== "offer_pending") {
+      alert('ניתן לשלוח שוב רק הפניה שעדיין "ממתינה לתגובה".');
+      return;
+    }
+    const lawyerDoc = await db.collection("lawyers").doc(lawyerEmail).get();
+    const lawyer = lawyerDoc.data();
+    const responseLink = `${APP_BASE_URL}/respond.html?token=${offer.responseToken}`;
+
+    if (typeof emailjs !== "undefined" && EMAILJS_SERVICE_ID && !EMAILJS_SERVICE_ID.startsWith("PASTE_")) {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_NEW_LEAD, {
+        to_email: lawyerEmail, lawyer_name: lawyer.fullName,
+        practice_area: lead.practiceArea, region: lead.region || "", response_link: responseLink,
+        login_link: `${APP_BASE_URL}/lawyer-login.html`,
+      });
+      alert("המייל נשלח שוב בהצלחה ל-" + lawyerEmail);
+    } else {
+      alert("שליחת מייל אמיתית אינה מוגדרת. הקישור להפניה: " + responseLink);
+    }
+    notifyZapier({
+      event: "lead_resent",
+      lawyerName: lawyer.fullName, lawyerEmail, lawyerPhone: lawyer.phone || "",
+      leadNumber: lead.leadNumber || "", practiceArea: lead.practiceArea, region: lead.region || "",
+      responseLink,
+    });
+  } catch (ex) { alert("שגיאה: " + ex.message); }
+}
+
+async function deleteLead(leadId) {
+  if (!confirm("למחוק את הליד הזה לצמיתות, כולל כל תיק/גבייה שנוצרו ממנו? לא ניתן לשחזר פעולה זו.")) return;
+  try {
+    // מוחקים תיקים, היסטוריה, הצעות וטוקני מענה שקשורים לליד - אחרת הם "יתומים" במסד הנתונים
+    const [casesSnap, logsSnap, offersSnap, tokensSnap] = await Promise.all([
+      db.collection("cases").where("leadId", "==", leadId).get(),
+      db.collection("statusLogs").where("leadId", "==", leadId).get(),
+      db.collection("leads").doc(leadId).collection("offers").get(),
+      db.collection("responseTokens").where("leadId", "==", leadId).get(),
+    ]);
+    const allDocs = [...casesSnap.docs, ...logsSnap.docs, ...offersSnap.docs, ...tokensSnap.docs];
+    for (let i = 0; i < allDocs.length; i += 450) {
+      const batch = db.batch();
+      allDocs.slice(i, i + 450).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+
+    await db.collection("leads").doc(leadId).collection("private").doc("contact").delete().catch(() => {});
+    await db.collection("leads").doc(leadId).delete();
+    closeModal();
+    refreshLeadsList();
+  } catch (ex) { alert("שגיאה: " + ex.message); }
+}
+
+function copyRegisterLink() {
+  const link = `${APP_BASE_URL}/register.html`;
+  navigator.clipboard.writeText(link).then(
+    () => alert("הקישור הועתק:\n" + link + "\n\nאפשר לשלוח אותו לעו\"ד בכל אמצעי (וואטסאפ, מייל וכו')."),
+    () => prompt("העתק את הקישור הבא ידנית:", link)
+  );
+}
+
+// ===================== עורכי דין =====================
+let lawyersFilter = {};
+
+async function renderLawyers() {
+  mainEl.innerHTML = `<h1>עורכי דין</h1><p class="muted">טוען...</p>`;
+  await loadMasterData();
+  await refreshLawyersList();
+}
+
+async function refreshLawyersList() {
+  const snap = await db.collection("lawyers").get();
+  let lawyers = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  if (lawyersFilter.q) {
+    const needle = lawyersFilter.q.toLowerCase();
+    lawyers = lawyers.filter((l) => l.fullName.toLowerCase().includes(needle) || l.id.toLowerCase().includes(needle) || (l.phone || "").includes(needle));
+  }
+  if (lawyersFilter.practiceArea) lawyers = lawyers.filter((l) => (l.practiceAreas || []).includes(lawyersFilter.practiceArea));
+  if (lawyersFilter.region) lawyers = lawyers.filter((l) => (l.regions || []).includes(lawyersFilter.region));
+
+  const casesSnap = await db.collection("cases").get();
+  const allCases = casesSnap.docs.map((d) => d.data());
+  const CLOSED = ["payment_received_full", "closed_no_payment", "not_realized"];
+  const loadOf = (email) => allCases.filter((c) => c.lawyerEmail === email && !CLOSED.includes(c.collectionStatus)).length;
+
+  const pendingCount = lawyers.filter((l) => l.status === "pending").length;
+
+  const rows = lawyers.map((l) => `
+    <tr style="cursor:pointer" onclick="openLawyerDetail('${esc(l.id)}')">
+      <td>${esc(l.fullName)}</td><td>${esc((l.practiceAreas || []).join(", ")) || "-"}</td><td>${esc((l.regions || []).join(", ")) || "-"}</td>
+      <td>${"★".repeat(Math.round(l.rating || 0)) || "-"}</td><td>${loadOf(l.id)}</td>
+      <td><span class="badge ${l.status}">${statusLabel(l.status)}</span></td>
+    </tr>`).join("");
+
+  mainEl.innerHTML = `
+    <div class="toolbar" style="justify-content:space-between;">
+      <h1 style="margin:0;">עורכי דין</h1>
+      <div style="display:flex; gap:10px;">
+        <button class="btn secondary" onclick="copyRegisterLink()">העתקת קישור הרשמה לעו"ד</button>
+        <button class="btn secondary" onclick="document.getElementById('excelImportInput').click()">ייבוא מאקסל</button>
+        <input type="file" id="excelImportInput" accept=".xlsx,.xls,.csv" style="display:none;">
+        <button class="btn accent" onclick="openNewLawyerModal()">+ עו"ד חדש</button>
+      </div>
+    </div>
+    ${pendingCount ? `<p class="muted">⏳ ${pendingCount} בקשות הצטרפות ממתינות לאישור (סטטוס "ממתין לאישור" ברשימה למטה) - פתח/י את הכרטיס כדי לדרג ולהפעיל.</p>` : ""}
+    <div class="toolbar">
+      <input id="searchBox" placeholder="חיפוש לפי שם/אימייל/טלפון" style="width:240px;" value="${lawyersFilter.q || ""}">
+      <select id="areaFilter" style="width:180px;"><option value="">כל התחומים</option>${optionsHtml(masterData.practiceAreas, lawyersFilter.practiceArea)}</select>
+      <select id="regionFilter" style="width:180px;"><option value="">כל האזורים</option>${optionsHtml(masterData.regions, lawyersFilter.region)}</select>
+    </div>
+    <p class="muted" style="margin-top:-8px;">ייבוא מאקסל: עמודות מצופות בשורה ראשונה - email, fullName, phone, practiceAreas, regions, rating, feeTerms, status (תחומים/אזורים מרובים מופרדים בפסיק)</p>
+    <div class="card"><table><thead><tr><th>שם</th><th>תחומים</th><th>אזורים</th><th>דירוג</th><th>עומס</th><th>סטטוס</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" class="muted">אין עורכי דין להצגה</td></tr>'}</tbody></table></div>`;
+
+  document.getElementById("searchBox").addEventListener("input", debounce((e) => { lawyersFilter.q = e.target.value; refreshLawyersList(); }, 350));
+  document.getElementById("areaFilter").addEventListener("change", (e) => { lawyersFilter.practiceArea = e.target.value; refreshLawyersList(); });
+  document.getElementById("regionFilter").addEventListener("change", (e) => { lawyersFilter.region = e.target.value; refreshLawyersList(); });
+  document.getElementById("excelImportInput").addEventListener("change", handleExcelImport);
+}
+
+// ===================== ייבוא עורכי דין מקובץ אקסל =====================
+// עמודות מצופות (שורה ראשונה = כותרות): email, fullName, phone, practiceAreas, regions, rating, feeTerms, status
+// practiceAreas/regions - רשימה מופרדת בפסיקים בתוך התא, לדוגמה: "נזיקין, מקרקעין"
+async function handleExcelImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (typeof XLSX === "undefined") {
+    alert("שגיאה: ספריית קריאת האקסל לא נטענה. רענן את הדף ונסה שוב.");
+    return;
+  }
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+    if (!rows.length) { alert("לא נמצאו שורות נתונים בקובץ."); return; }
+
+    const normalizeKey = (obj, ...keys) => {
+      for (const k of keys) { if (obj[k] !== undefined && obj[k] !== "") return obj[k]; }
+      return "";
+    };
+
+    let successCount = 0, errorRows = [];
+    for (const row of rows) {
+      const email = String(normalizeKey(row, "email", "Email", "אימייל")).trim();
+      if (!email || !email.includes("@")) { errorRows.push(row); continue; }
+      const splitList = (v) => String(v || "").split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+      try {
+        await db.collection("lawyers").doc(email).set({
+          fullName: String(normalizeKey(row, "fullName", "FullName", "שם מלא", "שם")) || email,
+          phone: String(normalizeKey(row, "phone", "Phone", "טלפון")),
+          practiceAreas: splitList(normalizeKey(row, "practiceAreas", "PracticeAreas", "תחומי עיסוק")),
+          regions: splitList(normalizeKey(row, "regions", "Regions", "אזורי עיסוק", "אזורים")),
+          rating: Number(normalizeKey(row, "rating", "Rating", "דירוג")) || 0,
+          feeTerms: String(normalizeKey(row, "feeTerms", "FeeTerms", "תנאי שכט", 'תנאי שכ"ט')),
+          status: String(normalizeKey(row, "status", "Status", "סטטוס")) || "active",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        successCount++;
+      } catch (ex) { errorRows.push(row); }
+    }
+
+    alert(`הייבוא הושלם: ${successCount} עורכי דין נוספו/עודכנו בהצלחה.` + (errorRows.length ? ` ${errorRows.length} שורות נכשלו (בדוק שיש עמודת email תקינה בכל שורה).` : ""));
+    e.target.value = "";
+    refreshLawyersList();
+  } catch (ex) {
+    alert("שגיאה בקריאת הקובץ: " + ex.message);
+  }
+}
+
+// שולח לעו"ד מייל "ברוכים הבאים" עם קישור כניסה למערכת (בעת יצירה ישירה ע"י המנהל, או אישור בקשת הצטרפות)
+async function sendWelcomeEmail(email, fullName) {
+  const loginLink = `${APP_BASE_URL}/lawyer-login.html`;
+  if (typeof emailjs === "undefined" || !EMAILJS_SERVICE_ID || EMAILJS_SERVICE_ID.startsWith("PASTE_")
+      || !EMAILJS_TEMPLATE_FREE_MSG || EMAILJS_TEMPLATE_FREE_MSG.startsWith("PASTE_")) {
+    console.log("EmailJS לא מוגדר - לא נשלח מייל ברוכים הבאים ל-" + email);
+    return;
+  }
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_FREE_MSG, {
+      to_email: email, lawyer_name: fullName,
+      subject: "ברוך/ה הבא/ה למערכת ההפניות",
+      message: `שלום ${fullName},\n\nהחשבון שלך במערכת ההפניות פעיל.\nלכניסה לאזור האישי שלך, היכנס/י לקישור הבא ועקוב/י אחר ההוראות (קישור כניסה יישלח למייל שלך, ללא צורך בסיסמה בשלב ראשון):\n${loginLink}\n\nלשאלות ופניות בוואטסאפ: 055-7150826\n\nבברכה,\nמערכת ההפניות`,
+    });
+  } catch (ex) { console.log("שליחת מייל ברוכים הבאים נכשלה:", ex.message); }
+}
+
+function openNewLawyerModal() {
+  openModal(`
+    <h2>עו"ד חדש</h2>
+    <form id="newLawyerForm">
+      <label>שם מלא</label><input id="fullName" required>
+      <label>אימייל (ישמש גם לכניסה למערכת - חובה שיהיה מדויק)</label><input id="email" type="email" required>
+      <label>טלפון</label><input id="phone">
+      <label>תחומי עיסוק</label>${multiChipSelector("newAreas", masterData.practiceAreas, [])}
+      <label>אזורי עיסוק</label>${multiChipSelector("newRegions", masterData.regions, [])}
+      <label>דירוג פנימי (0-5, גלוי למנהל בלבד)</label><input id="rating" type="number" min="0" max="5" value="3">
+      <label>תנאי שכ"ט / הסכם</label><textarea id="feeTerms" placeholder="לדוגמה: 20% משכר הטרחה שנגבה בפועל"></textarea>
+      <div class="error-msg" id="err"></div>
+      <div style="display:flex; gap:10px; margin-top:18px;"><button class="btn" type="submit">שמירה</button><button class="btn secondary" type="button" onclick="closeModal()">ביטול</button></div>
+    </form>`);
+  wireChips("newAreas"); wireChips("newRegions");
+
+  document.getElementById("newLawyerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value.trim();
+    try {
+      await db.collection("lawyers").doc(email).set({
+        fullName: document.getElementById("fullName").value, phone: document.getElementById("phone").value,
+        practiceAreas: getSelectedChips("newAreas"), regions: getSelectedChips("newRegions"),
+        rating: Number(document.getElementById("rating").value), feeTerms: document.getElementById("feeTerms").value,
+        status: "active", internalNotes: "", createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      sendWelcomeEmail(email, document.getElementById("fullName").value);
+      closeModal(); refreshLawyersList();
+    } catch (ex) { document.getElementById("err").textContent = ex.message; }
+  });
+}
+
+async function openLawyerDetail(email) {
+  const doc = await db.collection("lawyers").doc(email).get();
+  const l = { id: email, ...doc.data() };
+  const adminDoc = await db.collection("admins").doc(email).get();
+  const isLawyerAdmin = adminDoc.exists;
+  const [leadsSnap, casesSnap] = await Promise.all([
+    db.collection("leads").where("assignedLawyerEmail", "==", email).get(),
+    db.collection("cases").where("lawyerEmail", "==", email).get(),
+  ]);
+  const leads = leadsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const cases = casesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  const leadsRows = leads.map((ld) => {
+    const myOffer = (ld.offers || {})[email];
+    const displayStatus = myOffer ? myOffer.status : ld.status;
+    const canResend = myOffer && myOffer.status === "offer_pending" && !leadHasWinner(ld);
+    return `<tr><td>${fmtDate(ld.createdAt)}</td><td>${esc(ld.practiceArea)}</td><td><span class="badge ${displayStatus}">${statusLabel(displayStatus)}</span></td>
+      <td>${canResend ? `<button class="btn small secondary" onclick="resendLeadEmail('${esc(ld.id)}','${esc(email)}')">שלח שוב</button>` : ""}</td></tr>`;
+  }).join("") || `<tr><td colspan="4" class="muted">אין עדיין הפניות</td></tr>`;
+  const casesRows = cases.map((c) => `<tr><td>${fmtDate(c.openedAt)}</td><td>${c.feeAgreed ?? "-"}</td><td><span class="badge ${c.collectionStatus}">${statusLabel(c.collectionStatus)}</span></td><td>₪${c.amountPaid || 0}</td></tr>`).join("") || `<tr><td colspan="4" class="muted">אין עדיין תיקים</td></tr>`;
+
+  window._currentLawyerDetail = l; // נשמר בלי escape - לשימוש פנימי בקוד בלבד, לעולם לא מוזרק ל-HTML ישירות משם
+
+  openModal(`
+    <h2>${esc(l.fullName)}</h2>
+    <p class="muted">${isLawyerAdmin ? '<span class="badge active">מנהל מערכת</span> · ' : ""}נרשם ב-${fmtDate(l.createdAt)}</p>
+    ${(l.licenseNumber || l.officeAddress || l.experienceYears || l.medicalCommitteesExperience) ? `
+    <div class="card" style="background:#FAFAF7; margin-bottom:14px;">
+      <div class="muted" style="margin-bottom:6px;">פרטים שמולאו בהרשמה העצמית:</div>
+      ${l.licenseNumber ? `<div>מספר רישיון: <b>${esc(l.licenseNumber)}</b></div>` : ""}
+      ${l.officeAddress ? `<div>כתובת משרד: <b>${esc(l.officeAddress)}</b></div>` : ""}
+      ${l.experienceYears ? `<div>שנות ניסיון: <b>${esc(l.experienceYears)}</b></div>` : ""}
+      ${l.medicalCommitteesExperience ? `<div>ניסיון בוועדות רפואיות: <b>${esc(l.medicalCommitteesExperience)}</b></div>` : ""}
+    </div>` : ""}
+    <form id="editLawyerForm">
+      <label>אימייל (משמש להתחברות - שינוי כאן יעדכן אוטומטית את כל ההפניות/תיקים הקיימים)</label><input id="editEmail" type="email" value="${esc(l.id)}">
+      <label>טלפון</label><input id="editPhone" value="${esc(l.phone || "")}">
+      <label>תחומי עיסוק</label>${multiChipSelector("editAreas", masterData.practiceAreas, l.practiceAreas || [])}
+      <label>אזורי עיסוק</label>${multiChipSelector("editRegions", masterData.regions, l.regions || [])}
+      <label>דירוג פנימי (0-5)</label><input id="editRating" type="number" min="0" max="5" value="${l.rating || 0}">
+      <label>תנאי שכ"ט / הסכם</label><textarea id="editFeeTerms">${esc(l.feeTerms || "")}</textarea>
+      <label>סטטוס</label><select id="editStatus">${["active","inactive","pending","blocked"].map((s) => `<option value="${s}" ${l.status === s ? "selected" : ""}>${statusLabel(s)}</option>`).join("")}</select>
+      <label>הערות פנימיות</label><textarea id="editNotes">${esc(l.internalNotes || "")}</textarea>
+      <div class="error-msg" id="err"></div>
+      <div style="display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;">
+        <button class="btn" type="submit">עדכון פרטים</button>
+        <button class="btn secondary" type="button" onclick="downloadLawyerReport('${esc(l.id)}')">הורדת דוח (CSV)</button>
+        <button class="btn secondary" type="button" onclick="openSendFreeEmailModal('${esc(l.id)}')">שליחת מייל</button>
+        <button class="btn secondary" type="button" onclick="resetLawyerPassword('${esc(l.id)}')">שליחת איפוס סיסמה</button>
+        ${isLawyerAdmin ? "" : `<button class="btn secondary" type="button" onclick="makeLawyerAdmin('${esc(l.id)}')">הגדר כמנהל מערכת</button>`}
+        <button class="btn danger" type="button" onclick="deleteLawyer('${esc(l.id)}')">מחיקת עו"ד</button>
+        <button class="btn secondary" type="button" onclick="closeModal()">סגירה</button>
+      </div>
+    </form>
+    <h3 style="margin-top:22px;">הפניות</h3><table><thead><tr><th>תאריך</th><th>תחום</th><th>סטטוס</th><th></th></tr></thead><tbody>${leadsRows}</tbody></table>
+    <h3 style="margin-top:18px;">תיקים</h3><table><thead><tr><th>נפתח בתאריך</th><th>שכ"ט שסוכם</th><th>סטטוס גבייה</th><th>שולם</th></tr></thead><tbody>${casesRows}</tbody></table>`);
+
+  wireChips("editAreas"); wireChips("editRegions");
+
+  document.getElementById("editLawyerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const newEmail = document.getElementById("editEmail").value.trim();
+    try {
+      const patch = {
+        phone: document.getElementById("editPhone").value,
+        practiceAreas: getSelectedChips("editAreas"), regions: getSelectedChips("editRegions"),
+        rating: Number(document.getElementById("editRating").value), feeTerms: document.getElementById("editFeeTerms").value,
+        status: document.getElementById("editStatus").value, internalNotes: document.getElementById("editNotes").value,
+      };
+      const justApproved = l.status === "pending" && patch.status === "active";
+      if (newEmail && newEmail !== l.id) {
+        await changeLawyerEmail(l.id, newEmail, patch);
+      } else {
+        await db.collection("lawyers").doc(l.id).update(patch);
+      }
+      if (justApproved) sendWelcomeEmail(newEmail || l.id, l.fullName);
+      closeModal(); refreshLawyersList();
+    } catch (ex) { document.getElementById("err").textContent = ex.message; }
+  });
+
+  window._currentLawyerReportData = { lawyer: l, leads, cases };
+}
+
+// מעביר עו"ד לכתובת מייל חדשה: יוצר מסמך חדש, מעדכן את כל הלידים/תיקים הקיימים, ומוחק את הישן
+async function changeLawyerEmail(oldEmail, newEmail, patch) {
+  const oldDoc = await db.collection("lawyers").doc(oldEmail).get();
+  const data = { ...oldDoc.data(), ...patch };
+  await db.collection("lawyers").doc(newEmail).set(data);
+  await db.collection("lawyers").doc(oldEmail).delete();
+
+  const leadsSnap = await db.collection("leads").where("assignedLawyerEmail", "==", oldEmail).get();
+  const batch1 = db.batch();
+  leadsSnap.docs.forEach((d) => batch1.update(d.ref, { assignedLawyerEmail: newEmail }));
+  if (leadsSnap.size) await batch1.commit();
+
+  const casesSnap = await db.collection("cases").where("lawyerEmail", "==", oldEmail).get();
+  const batch2 = db.batch();
+  casesSnap.docs.forEach((d) => batch2.update(d.ref, { lawyerEmail: newEmail }));
+  if (casesSnap.size) await batch2.commit();
+
+  const adminDoc = await db.collection("admins").doc(oldEmail).get();
+  if (adminDoc.exists) {
+    await db.collection("admins").doc(newEmail).set(adminDoc.data());
+    await db.collection("admins").doc(oldEmail).delete();
+  }
+}
+
+async function deleteLawyer(email) {
+  if (!confirm(`למחוק את ${email} לצמיתות? ההפניות והתיקים הקיימים שלו יישארו במערכת אך לא יהיו משויכים לעו"ד פעיל.`)) return;
+  try {
+    await db.collection("lawyers").doc(email).delete();
+    closeModal();
+    refreshLawyersList();
+  } catch (ex) { alert("שגיאה: " + ex.message); }
+}
+
+// שולח לעו"ד מייל איפוס סיסמה סטנדרטי של Firebase - פותר מצב של "שכחתי סיסמה ולא מצליח להתחבר",
+// בלי שהמנהל צריך/יכול לראות או לקבוע את הסיסמה בעצמו (מגבלה טכנית - Firebase לא מאפשר זאת ללא שרת)
+async function resetLawyerPassword(email) {
+  if (!confirm(`לשלוח ל-${email} מייל לאיפוס סיסמה?`)) return;
+  try {
+    await auth.sendPasswordResetEmail(email);
+    alert(`נשלח מייל איפוס סיסמה ל-${email}. אם אינו מגיע תוך דקות ספורות, יש לבדוק בתיקיית הספאם.`);
+  } catch (ex) {
+    alert("שגיאה בשליחת המייל: " + ex.message);
+  }
+}
+
+async function makeLawyerAdmin(email) {
+  if (!confirm(`להגדיר את ${email} כמנהל מערכת? מנהל רואה ויכול לערוך את כל הנתונים במערכת, כולל דירוגים פנימיים.`)) return;
+  try {
+    await db.collection("admins").doc(email).set({ addedAt: firebase.firestore.FieldValue.serverTimestamp(), addedBy: currentUser.email });
+    alert(`${email} הוגדר/ה כמנהל מערכת.`);
+    closeModal();
+  } catch (ex) { alert("שגיאה: " + ex.message + " (ייתכן שצריך לעדכן את firestore.rules - ראו ההנחיות שנשלחו)"); }
+}
+
+function openSendFreeEmailModal(email) {
+  const fullName = (window._currentLawyerDetail && window._currentLawyerDetail.id === email) ? window._currentLawyerDetail.fullName : email;
+  openModal(`
+    <h2>שליחת מייל ל${esc(fullName)}</h2>
+    <form id="freeEmailForm">
+      <label>נושא</label><input id="freeEmailSubject" required>
+      <label>תוכן ההודעה</label><textarea id="freeEmailBody" style="min-height:160px;" required></textarea>
+      <div class="error-msg" id="err"></div>
+      <div style="display:flex; gap:10px; margin-top:18px;"><button class="btn" type="submit">שליחה</button><button class="btn secondary" type="button" onclick="closeModal()">ביטול</button></div>
+    </form>`);
+
+  document.getElementById("freeEmailForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("err");
+    if (typeof emailjs === "undefined" || !EMAILJS_TEMPLATE_FREE_MSG || EMAILJS_TEMPLATE_FREE_MSG.startsWith("PASTE_")) {
+      err.textContent = "שליחת מייל חופשי דורשת הגדרת תבנית EmailJS נוספת (EMAILJS_TEMPLATE_FREE_MSG) - ראו ההנחיות שנשלחו.";
+      return;
+    }
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_FREE_MSG, {
+        to_email: email, lawyer_name: fullName,
+        subject: document.getElementById("freeEmailSubject").value,
+        message: document.getElementById("freeEmailBody").value,
+      });
+      closeModal();
+      alert("המייל נשלח בהצלחה.");
+    } catch (ex) { err.textContent = "שגיאה בשליחה: " + ex.message; }
+  });
+}
+
+function downloadLawyerReport(email) {
+  const { lawyer, leads, cases } = window._currentLawyerReportData;
+  const rows = [["תאריך פתיחה", "תחום עיסוק", "סטטוס ליד", "שכ\"ט שסוכם", "סטטוס גבייה", "שולם בפועל"]];
+  cases.forEach((c) => {
+    const lead = leads.find((l) => l.id === c.leadId) || {};
+    rows.push([c.openedAt ? fmtDate(c.openedAt) : "", lead.practiceArea || "", lead.status || "", c.feeAgreed ?? "", c.collectionStatus || "", c.amountPaid ?? 0]);
+  });
+  const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `report-${lawyer.fullName}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===================== רשלנות רפואית (פייל) =====================
+
+async function renderMmFiles() {
+  mainEl.innerHTML = `<h1>רשלנות רפואית (פייל)</h1><p class="muted">טוען...</p>`;
+  await loadMmMasterData();
+  const [filesSnap, lawyersSnap] = await Promise.all([
+    db.collection("mmFiles").orderBy("createdAt", "desc").get(),
+    db.collection("lawyers").where("lawyerType", "==", "mm_file").get(),
+  ]);
+  const mmLawyers = lawyersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  window._mmLawyersCache = mmLawyers;
+  const nameByEmail = {};
+  mmLawyers.forEach((l) => (nameByEmail[l.id] = l.fullName));
+
+  let files = filesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const contactDocs = await Promise.all(files.map((f) => db.collection("mmFiles").doc(f.id).collection("private").doc("contact").get()));
+  contactDocs.forEach((cd, i) => { if (cd.exists) Object.assign(files[i], cd.data()); });
+
+  const rows = files.map((f) => `
+    <tr style="cursor:pointer" onclick="openMmFileDetail('${f.id}')">
+      <td>${f.fileNumber ? "#" + Number(f.fileNumber) : "-"}</td>
+      <td>${fmtDate(f.createdAt)}</td>
+      <td>${esc(f.clientName) || "-"}</td><td>${esc(f.clientPhone) || "-"}</td>
+      <td>${esc(nameByEmail[f.assignedLawyerEmail] || f.assignedLawyerEmail)}</td>
+      <td><span class="badge ${f.status === "mm_closed" ? "declined" : "case_opened"}">${statusLabel(f.status)}</span></td>
+      <td>${esc(f.collectionStatus) || "-"}</td>
+    </tr>`).join("");
+
+  const mmLawyerRows = mmLawyers.map((l) => `<li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+    <span>${esc(l.fullName)} - ${esc(l.phone || "")} · ${esc(l.id)}</span>
+    <span class="badge ${l.status}">${statusLabel(l.status)}</span>
+  </li>`).join("") || '<p class="muted">טרם הוגדר עו"ד מטפל</p>';
+
+  mainEl.innerHTML = `
+    <div class="toolbar" style="justify-content:space-between;"><h1 style="margin:0;">רשלנות רפואית (פייל)</h1>
+      <button class="btn accent" onclick="openNewMmFileModal()">+ תיק חדש</button></div>
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="margin-top:0;">עו"ד מטפל (משרד חיצוני קבוע)</h3>
+      <ul style="list-style:none; padding:0; margin:0;">${mmLawyerRows}</ul>
+      <button class="btn small secondary" style="margin-top:10px;" onclick="openNewMmLawyerModal()">+ הוספת עו"ד מטפל</button>
+    </div>
+    ${mmLawyers.length === 0 ? '<p class="error-msg">לא הוגדר אף עו"ד מסוג "רשלנות רפואית פייל" עדיין - הוסף אחד למעלה לפני יצירת תיק.</p>' : ""}
+    <div class="card" style="overflow-x:auto;"><table>
+      <thead><tr><th>מס' תיק</th><th>תאריך פתיחה</th><th>לקוח</th><th>טלפון</th><th>עו"ד מטפל</th><th>סטטוס</th><th>סטטוס גבייה</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="7" class="muted">אין עדיין תיקים</td></tr>'}</tbody>
+    </table></div>`;
+}
+
+function openNewMmLawyerModal() {
+  openModal(`
+    <h2>הוספת עו"ד מטפל - רשלנות רפואית</h2>
+    <form id="newMmLawyerForm">
+      <label>שם מלא</label><input id="mmlFullName" required>
+      <label>טלפון</label><input id="mmlPhone" required>
+      <label>אימייל (ישמש לכניסה למערכת)</label><input id="mmlEmail" type="email" required>
+      <div class="error-msg" id="err"></div>
+      <div style="display:flex; gap:10px; margin-top:18px;"><button class="btn" type="submit">יצירה</button><button class="btn secondary" type="button" onclick="closeModal()">ביטול</button></div>
+    </form>`);
+
+  document.getElementById("newMmLawyerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("err");
+    const email = document.getElementById("mmlEmail").value.trim();
+    try {
+      await db.collection("lawyers").doc(email).set({
+        fullName: document.getElementById("mmlFullName").value, phone: document.getElementById("mmlPhone").value,
+        lawyerType: "mm_file", practiceAreas: [], regions: [], rating: 0, feeTerms: "",
+        status: "active", internalNotes: "", createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      closeModal();
+      renderMmFiles();
+    } catch (ex) { err.textContent = ex.message; }
+  });
+}
+
+function openNewMmFileModal() {
+  openModal(`
+    <h2>תיק רשלנות רפואית חדש</h2>
+    <form id="newMmFileForm">
+      <label>שם הלקוח</label><input id="mmClientName" required>
+      <label>טלפון הלקוח</label><input id="mmClientPhone" required>
+      <label>תיאור התיק</label><textarea id="mmDescription"></textarea>
+      <label>עו"ד מטפל</label><select id="mmLawyer" required>${mmLawyerOptionsHtml()}</select>
+      <div class="error-msg" id="err"></div>
+      <div style="display:flex; gap:10px; margin-top:18px;"><button class="btn" type="submit">יצירה ושיבוץ</button><button class="btn secondary" type="button" onclick="closeModal()">ביטול</button></div>
+    </form>`);
+
+  document.getElementById("newMmFileForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("err");
+    try {
+      const assignedLawyerEmail = document.getElementById("mmLawyer").value;
+      if (!assignedLawyerEmail) { err.textContent = 'יש להגדיר לפחות עו"ד אחד מסוג "רשלנות רפואית פייל".'; return; }
+
+      const counterRef = db.collection("counters").doc("mmFileCounter");
+      const fileNumber = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(counterRef);
+        const next = (snap.exists ? snap.data().value : 0) + 1;
+        tx.set(counterRef, { value: next });
+        return next;
+      });
+
+      const ref = await db.collection("mmFiles").add({
+        fileNumber, description: document.getElementById("mmDescription").value,
+        status: "mm_open", collectionStatus: "", assignedLawyerEmail,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentUser.email,
+      });
+      await ref.collection("private").doc("contact").set({
+        clientName: document.getElementById("mmClientName").value,
+        clientPhone: document.getElementById("mmClientPhone").value,
+      });
+      closeModal();
+      openMmFileDetail(ref.id);
+    } catch (ex) { err.textContent = ex.message; }
+  });
+}
+
+function mmLawyerOptionsHtml(selected) {
+  // נבנה מתוך window._mmLawyersCache שמתמלא ב-renderMmFiles; fallback לשליפה חיה אם עדיין ריק
+  const list = window._mmLawyersCache || [];
+  return list.map((l) => `<option value="${esc(l.id)}" ${l.id === selected ? "selected" : ""}>${esc(l.fullName)}</option>`).join("") || '<option value="">אין עו"ד זמין</option>';
+}
+
+async function openMmFileDetail(id) {
+  const [doc, contactDoc, logSnap] = await Promise.all([
+    db.collection("mmFiles").doc(id).get(),
+    db.collection("mmFiles").doc(id).collection("private").doc("contact").get(),
+    db.collection("mmFiles").doc(id).collection("contactLog").get(),
+  ]);
+  const f = { id, ...doc.data(), ...(contactDoc.exists ? contactDoc.data() : {}) };
+  const lawyerDoc = await db.collection("lawyers").doc(f.assignedLawyerEmail).get();
+  const lawyerName = lawyerDoc.exists ? lawyerDoc.data().fullName : f.assignedLawyerEmail;
+
+  const logEntries = logSnap.docs.map((d) => d.data()).sort((a, b) => (a.at && b.at ? b.at.toMillis() - a.at.toMillis() : 0));
+  const logRows = logEntries.map((l) => `<tr><td>${fmtDate(l.at)}</td><td>${esc(l.note)}</td></tr>`).join("") || '<tr><td colspan="2" class="muted">אין עדיין רישומי מגע</td></tr>';
+
+  openModal(`
+    <h2>תיק רשלנות רפואית ${f.fileNumber ? "#" + Number(f.fileNumber) : ""}</h2>
+    <p><b>לקוח:</b> ${esc(f.clientName) || "-"} · ${esc(f.clientPhone) || "-"}</p>
+    <p><b>תיאור:</b> ${esc(f.description) || "-"}</p>
+    <p><b>עו"ד מטפל:</b> ${esc(lawyerName)}</p>
+    <p><b>סטטוס:</b> <span class="badge ${f.status === "mm_closed" ? "declined" : "case_opened"}">${statusLabel(f.status)}</span></p>
+    <form id="mmUpdateForm">
+      <label>סטטוס גבייה</label>
+      <select id="mmCollectionStatus">
+        <option value="">-</option>
+        ${mmMasterData.collectionStatuses.map((s) => `<option value="${esc(s.name)}" ${f.collectionStatus === s.name ? "selected" : ""}>${esc(s.name)}</option>`).join("")}
+      </select>
+      <div style="margin-top:14px;"><button class="btn small" type="submit">עדכון סטטוס גבייה</button></div>
+    </form>
+    ${f.status !== "mm_closed" ? `
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+      <label>סגירת התיק</label>
+      <select id="mmClosureReason">
+        <option value="">בחר/י סיבת סגירה...</option>
+        ${mmMasterData.closureReasons.map((r) => `<option value="${esc(r.name)}">${esc(r.name)}</option>`).join("")}
+      </select>
+      <button class="btn danger small" style="margin-top:8px;" onclick="closeMmFile('${id}')">סגירת תיק</button>
+    </div>` : `<p class="muted">סיבת סגירה: ${esc(f.closureReason) || "-"} (${f.closedAt ? fmtDate(f.closedAt) : "-"})</p>`}
+    <h3 style="margin-top:20px;">יומן מגעים בתיק</h3>
+    <table><thead><tr><th>תאריך</th><th>הערה</th></tr></thead><tbody>${logRows}</tbody></table>
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button class="btn secondary" onclick="closeModal()">סגירה</button>
+    </div>`);
+
+  document.getElementById("mmUpdateForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await db.collection("mmFiles").doc(id).update({ collectionStatus: document.getElementById("mmCollectionStatus").value });
+    openMmFileDetail(id);
+  });
+}
+
+async function closeMmFile(id) {
+  const reason = document.getElementById("mmClosureReason").value;
+  if (!reason) { alert("יש לבחור סיבת סגירה."); return; }
+  if (!confirm("לסגור את התיק?")) return;
+  await db.collection("mmFiles").doc(id).update({ status: "mm_closed", closureReason: reason, closedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  openMmFileDetail(id);
+}
+
+// ===================== הגדרות =====================
+async function renderSettings() {
+  mainEl.innerHTML = `<h1>הגדרות</h1><p class="muted">טוען...</p>`;
+  if (isFullAdminScope()) await loadMasterData();
+  await loadMmMasterData();
+  renderSettingsView();
+}
+function masterListRows(collection) {
+  const items = masterData[collection];
+  if (!items.length) return `<p class="muted">אין פריטים עדיין</p>`;
+  return `<ul style="list-style:none; padding:0; margin:0;">${items.map((i) => `<li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);"><span>${esc(i.name)}</span><a style="cursor:pointer; color:var(--danger); font-size:.85rem;" onclick="deleteMasterItem('${collection}','${i.id}')">הסרה</a></li>`).join("")}</ul>`;
+}
+function mmMasterListRows(key, collection) {
+  const items = mmMasterData[key];
+  if (!items.length) return `<p class="muted">אין פריטים עדיין</p>`;
+  return `<ul style="list-style:none; padding:0; margin:0;">${items.map((i) => `<li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);"><span>${esc(i.name)}</span><a style="cursor:pointer; color:var(--danger); font-size:.85rem;" onclick="deleteMasterItem('${collection}','${i.id}')">הסרה</a></li>`).join("")}</ul>`;
+}
+async function adminListRows() {
+  const snap = await db.collection("admins").get();
+  if (snap.empty) return `<p class="muted">אין מנהלים רשומים</p>`;
+  return `<ul style="list-style:none; padding:0; margin:0;">${snap.docs.map((d) => `
+    <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+      <span>${esc(d.id)}${d.id === currentUser.email ? " (את/ה)" : ""} ${(d.data().scope || "full") === "mm_file" ? '<span class="badge pending">רשלנות רפואית בלבד</span>' : ""}</span>
+      ${d.id === currentUser.email ? "" : `<a style="cursor:pointer; color:var(--danger); font-size:.85rem;" onclick="removeAdmin('${esc(d.id)}')">הסרת הרשאה</a>`}
+    </li>`).join("")}</ul>`;
+}
+
+function openAddAdminModal() {
+  openModal(`
+    <h2>הוספת מנהל מערכת חדש</h2>
+    <p class="muted">מתאים גם למי שאינו עו"ד (למשל איש צוות משרדי) - ייווצר עבורו חשבון כניסה עם אימייל+סיסמה.</p>
+    <form id="addAdminForm">
+      <label>אימייל</label><input id="newAdminEmail" type="email" required>
+      <label>סיסמה זמנית (לפחות 6 תווים)</label><input id="newAdminPassword" type="password" minlength="6" required>
+      <label>היקף הרשאה</label>
+      <select id="newAdminScope">
+        <option value="full">מנהל מלא - גישה לכל המערכת</option>
+        <option value="mm_file">מנהל מוגבל - רשלנות רפואית (פייל) בלבד</option>
+      </select>
+      <div class="error-msg" id="err"></div>
+      <div style="display:flex; gap:10px; margin-top:18px;"><button class="btn" type="submit">יצירה</button><button class="btn secondary" type="button" onclick="closeModal()">ביטול</button></div>
+    </form>`);
+
+  document.getElementById("addAdminForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("err");
+    const email = document.getElementById("newAdminEmail").value.trim();
+    const password = document.getElementById("newAdminPassword").value;
+    try {
+      // יוצרים את המשתמש דרך מופע Firebase משני, כדי לא "להתנתק" מהחשבון המחובר הנוכחי
+      const secondaryApp = firebase.initializeApp(firebaseConfig, "secondary-" + Date.now());
+      await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+      // חובה: מייל אימות - עד שהמנהל החדש ילחץ עליו, ההרשאה לא תהיה פעילה (מגן מפני התחזות לפני כניסה ראשונה)
+      await secondaryApp.auth().currentUser.sendEmailVerification();
+      await secondaryApp.auth().signOut();
+      await secondaryApp.delete();
+
+      await db.collection("admins").doc(email).set({
+        scope: document.getElementById("newAdminScope").value,
+        addedAt: firebase.firestore.FieldValue.serverTimestamp(), addedBy: currentUser.email,
+      });
+      closeModal();
+      alert(`נוצר חשבון עבור ${email}. חשוב: נשלח אליו מייל אימות - עליו ללחוץ על הקישור שם לפני שיוכל להתחבר בפועל (זו דרישת אבטחה).`);
+      renderSettingsView();
+    } catch (ex) {
+      err.textContent = ex.code === "auth/email-already-in-use"
+        ? "כתובת זו כבר רשומה כמשתמש - אם זה מישהו קיים, אפשר פשוט להוסיף לו הרשאת מנהל."
+        : "שגיאה: " + ex.message;
+    }
+  });
+}
+
+async function removeAdmin(email) {
+  if (!confirm(`להסיר את הרשאת המנהל של ${email}? (חשבון ההתחברות עצמו לא יימחק, רק ההרשאה במערכת)`)) return;
+  await db.collection("admins").doc(email).delete();
+  renderSettingsView();
+}
+
+async function resetAllData() {
+  const typed = prompt('פעולה זו תמחק לצמיתות את כל הלידים, ההפניות, התיקים וההיסטוריה (עורכי הדין וההגדרות יישארו). להמשך, הקלד/י בדיוק את המילה: איפוס');
+  if (typed !== "איפוס") { if (typed !== null) alert("הטקסט לא תואם - האיפוס בוטל."); return; }
+  try {
+    const [leadsSnap, casesSnap, logsSnap, allOffersSnap, tokensSnap] = await Promise.all([
+      db.collection("leads").get(), db.collection("cases").get(), db.collection("statusLogs").get(),
+      db.collectionGroup("offers").get(), db.collection("responseTokens").get(),
+    ]);
+    const allDocs = [...casesSnap.docs, ...logsSnap.docs, ...allOffersSnap.docs, ...tokensSnap.docs];
+    for (let i = 0; i < allDocs.length; i += 450) {
+      const batch = db.batch();
+      allDocs.slice(i, i + 450).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+    for (const leadDoc of leadsSnap.docs) {
+      await leadDoc.ref.collection("private").doc("contact").delete().catch(() => {});
+    }
+    for (let i = 0; i < leadsSnap.docs.length; i += 450) {
+      const batch = db.batch();
+      leadsSnap.docs.slice(i, i + 450).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+    await db.collection("counters").doc("leadCounter").set({ value: 0 });
+    await db.collection("counters").doc("weeklyReport").delete().catch(() => {});
+    alert("האיפוס הושלם - כל הלידים, ההפניות והתיקים נמחקו.");
+    render("dashboard");
+  } catch (ex) { alert("שגיאה באיפוס: " + ex.message); }
+}
+
+function renderSettingsView() {
+  const mmCardsHtml = `
+    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:20px;">
+      <div class="card" style="flex:1; min-width:280px;"><h3>סטטוסי גבייה - רשלנות רפואית</h3><div id="mmCsList">${mmMasterListRows("collectionStatuses", "mmCollectionStatuses")}</div>
+        <form id="addMmCsForm" style="margin-top:14px; display:flex; gap:8px;"><input id="newMmCsName" placeholder="סטטוס גבייה חדש" style="flex:1;"><button class="btn small" type="submit">הוספה</button></form></div>
+      <div class="card" style="flex:1; min-width:280px;"><h3>סיבות סגירה - רשלנות רפואית</h3><div id="mmCrList">${mmMasterListRows("closureReasons", "mmClosureReasons")}</div>
+        <form id="addMmCrForm" style="margin-top:14px; display:flex; gap:8px;"><input id="newMmCrName" placeholder="סיבת סגירה חדשה" style="flex:1;"><button class="btn small" type="submit">הוספה</button></form></div>
+    </div>`;
+
+  if (!isFullAdminScope()) {
+    mainEl.innerHTML = `<h1>הגדרות</h1>${mmCardsHtml}`;
+  } else {
+    mainEl.innerHTML = `
+      <h1>הגדרות</h1>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <div class="card" style="flex:1; min-width:280px;"><h3>תחומי עיסוק</h3><div id="areasList">${masterListRows("practiceAreas")}</div>
+          <form id="addAreaForm" style="margin-top:14px; display:flex; gap:8px;"><input id="newAreaName" placeholder="תחום עיסוק חדש" style="flex:1;"><button class="btn small" type="submit">הוספה</button></form></div>
+        <div class="card" style="flex:1; min-width:280px;"><h3>אזורים גאוגרפיים</h3><div id="regionsList">${masterListRows("regions")}</div>
+          <form id="addRegionForm" style="margin-top:14px; display:flex; gap:8px;"><input id="newRegionName" placeholder="אזור חדש" style="flex:1;"><button class="btn small" type="submit">הוספה</button></form></div>
+      </div>
+      ${mmCardsHtml}
+      <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:20px;">
+        <div class="card" style="flex:1; min-width:280px;">
+          <h3>ניהול מנהלי מערכת</h3>
+          <div id="adminsList"><p class="muted">טוען...</p></div>
+          <button class="btn small accent" style="margin-top:14px;" onclick="openAddAdminModal()">+ הוספת מנהל חדש</button>
+        </div>
+        <div class="card" style="flex:1; min-width:280px; border-color:var(--danger);">
+          <h3 style="color:var(--danger);">איזור מסוכן</h3>
+          <p class="muted">מוחק לצמיתות את כל הלידים, ההפניות, התיקים וההיסטוריה (רשת ההפניות הרגילה בלבד - לא נוגע ברשלנות רפואית). עורכי דין, מנהלים, תחומי עיסוק ואזורים יישארו ללא שינוי.</p>
+          <button class="btn danger small" onclick="resetAllData()">איפוס כל נתוני הלידים/תיקים</button>
+        </div>
+      </div>`;
+    document.getElementById("addAreaForm").addEventListener("submit", async (e) => { e.preventDefault(); const name = document.getElementById("newAreaName").value.trim(); if (!name) return; await db.collection("practiceAreas").add({ name }); await loadMasterData(); renderSettingsView(); });
+    document.getElementById("addRegionForm").addEventListener("submit", async (e) => { e.preventDefault(); const name = document.getElementById("newRegionName").value.trim(); if (!name) return; await db.collection("regions").add({ name }); await loadMasterData(); renderSettingsView(); });
+    adminListRows().then((html) => { const el = document.getElementById("adminsList"); if (el) el.innerHTML = html; });
+  }
+
+  document.getElementById("addMmCsForm").addEventListener("submit", async (e) => { e.preventDefault(); const name = document.getElementById("newMmCsName").value.trim(); if (!name) return; await db.collection("mmCollectionStatuses").add({ name }); await loadMmMasterData(); renderSettingsView(); });
+  document.getElementById("addMmCrForm").addEventListener("submit", async (e) => { e.preventDefault(); const name = document.getElementById("newMmCrName").value.trim(); if (!name) return; await db.collection("mmClosureReasons").add({ name }); await loadMmMasterData(); renderSettingsView(); });
+}
+async function deleteMasterItem(collection, id) {
+  await db.collection(collection).doc(id).delete();
+  if (isFullAdminScope()) await loadMasterData();
+  await loadMmMasterData();
+  renderSettingsView();
+}
+
+// ===================== ניתוב ראשי =====================
+async function render(view) {
+  try {
+    const fullOnlyViews = ["dashboard", "leads", "lawyers"];
+    if (fullOnlyViews.includes(view) && !isFullAdminScope()) {
+      mainEl.innerHTML = `<p class="error-msg">אין לך הרשאה לסקשן זה.</p>`;
+      return;
+    }
+    if (view === "dashboard") await renderDashboard();
+    else if (view === "leads") await renderLeads();
+    else if (view === "lawyers") await renderLawyers();
+    else if (view === "mmfiles") await renderMmFiles();
+    else if (view === "settings") await renderSettings();
+  } catch (ex) { mainEl.innerHTML = `<p class="error-msg">${ex.message}</p>`; }
+}
+
+requireAdmin((user) => {
+  currentUser = user;
+  if (!isFullAdminScope()) {
+    document.querySelectorAll("#nav a[data-full-only]").forEach((a) => a.style.display = "none");
+    document.querySelector(".user-info").firstChild.textContent = 'מחובר/ת כמנהל (רשלנות רפואית - פייל)';
+    document.querySelectorAll("#nav a").forEach((a) => a.classList.remove("active"));
+    document.querySelector('#nav a[data-view="mmfiles"]').classList.add("active");
+    render("mmfiles");
+  } else {
+    render("dashboard");
+  }
+});
+  </script>
+</body>
+</html>

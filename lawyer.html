@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>האזור האישי שלי | מערכת הפניות</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Heebo:wght@400;500;600&display=swap');
+:root {
+  --bg: #F6F4EF; --surface: #FFFFFF; --ink: #23292B; --ink-soft: #5B635F;
+  --primary: #1F3A3D; --primary-light: #2E5256; --accent: #A8763E; --accent-soft: #F0E4D3;
+  --border: #E2DED4; --success: #3F6B4F; --success-bg: #E7F0E9;
+  --danger: #A23B33; --danger-bg: #F7E8E6; --warn: #92711F; --warn-bg: #F6EDD8; --radius: 6px;
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:'Heebo',sans-serif; direction:rtl; font-size:15px; line-height:1.55; }
+h1,h2,h3 { font-family:'Frank Ruhl Libre',serif; font-weight:700; color:var(--primary); margin:0 0 .4em 0; }
+a { color: var(--primary); }
+.layout { display:flex; min-height:100vh; }
+.sidebar { width:230px; background:var(--primary); color:#EDEFEA; padding:24px 18px; flex-shrink:0; }
+.sidebar .brand { font-family:'Frank Ruhl Libre',serif; font-size:1.2rem; margin-bottom:28px; color:#fff; }
+.sidebar nav a { display:block; color:#C9D2CC; text-decoration:none; padding:10px 12px; border-radius:var(--radius); margin-bottom:4px; font-size:.95rem; cursor:pointer; }
+.sidebar nav a:hover { background:rgba(255,255,255,.08); color:#fff; }
+.sidebar nav a.active { background:var(--accent); color:#fff; }
+.sidebar .user-info { margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,.15); font-size:.85rem; color:#C9D2CC; }
+.main { flex:1; padding:32px 40px; max-width:1100px; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; margin-bottom:20px; }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
+.stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; }
+.stat .num { font-family:'Frank Ruhl Libre',serif; font-size:1.9rem; color:var(--primary); }
+.stat .label { color:var(--ink-soft); font-size:.85rem; }
+table { width:100%; border-collapse:collapse; font-size:.9rem; }
+th,td { text-align:right; padding:10px 12px; border-bottom:1px solid var(--border); }
+th { color:var(--ink-soft); font-weight:500; font-size:.82rem; }
+tr:hover td { background:#FAFAF7; }
+.btn { display:inline-block; background:var(--primary); color:#fff; border:none; padding:9px 18px; border-radius:var(--radius); font-family:'Heebo',sans-serif; font-size:.9rem; cursor:pointer; text-decoration:none; }
+.btn:hover { background:var(--primary-light); }
+.btn.secondary { background:transparent; color:var(--primary); border:1px solid var(--border); }
+.btn.accent { background:var(--accent); }
+.btn.danger { background:var(--danger); }
+.btn.small { padding:5px 12px; font-size:.8rem; }
+.badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.78rem; }
+.badge.new,.badge.offered { background:var(--warn-bg); color:var(--warn); }
+.badge.accepted,.badge.meeting_scheduled { background:var(--accent-soft); color:var(--accent); }
+.badge.case_opened { background:#E3EAF0; color:var(--primary); }
+.badge.fully_collected,.badge.active { background:var(--success-bg); color:var(--success); }
+.badge.declined,.badge.sla_expired,.badge.not_realized,.badge.closed_no_payment,.badge.blocked { background:var(--danger-bg); color:var(--danger); }
+.badge.offer_pending { background:var(--warn-bg); color:var(--warn); }
+.badge.offer_accepted,.badge.offer_meeting_scheduled { background:var(--accent-soft); color:var(--accent); }
+.badge.offer_case_opened { background:#E3EAF0; color:var(--primary); }
+.badge.offer_declined,.badge.offer_not_realized,.badge.offer_closed_other_won { background:var(--danger-bg); color:var(--danger); }
+label { display:block; font-size:.85rem; color:var(--ink-soft); margin:12px 0 4px; }
+input,select,textarea { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:var(--radius); font-family:'Heebo',sans-serif; font-size:.9rem; background:#fff; color:var(--ink); }
+textarea { min-height:90px; resize:vertical; }
+.auth-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); }
+.auth-box { width:380px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:34px 30px; }
+.auth-box .brand { font-family:'Frank Ruhl Libre',serif; font-size:1.3rem; color:var(--primary); margin-bottom:4px; }
+.muted { color:var(--ink-soft); font-size:.85rem; }
+.error-msg { color:var(--danger); font-size:.85rem; margin-top:8px; }
+.success-msg { color:var(--success); font-size:.85rem; margin-top:8px; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.chip { border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:.82rem; cursor:pointer; user-select:none; }
+.chip.selected { background:var(--primary); color:#fff; border-color:var(--primary); }
+.toolbar { display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap; }
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:50; }
+.modal { background:#fff; border-radius:var(--radius); padding:26px; width:480px; max-width:92vw; max-height:86vh; overflow-y:auto; }
+.empty-state { text-align:center; padding:40px 20px; color:var(--ink-soft); }
+.config-banner { background:var(--warn-bg); color:var(--warn); padding:10px 16px; font-size:.85rem; text-align:center; }
+</style>
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="brand">האזור האישי שלי</div>
+      <nav id="nav">
+        <a data-view="referrals" class="active" data-referral-only>ההפניות שלי</a>
+        <a data-view="cases" data-referral-only>התיקים שלי</a>
+        <a data-view="mmfiles" data-mm-only style="display:none;">תיקי רשלנות רפואית</a>
+        <a data-view="contact">יצירת קשר עם המשרד</a>
+        <a data-view="terms" data-referral-only>תנאי ההתקשרות</a>
+        <a data-view="account">הגדרות כניסה</a>
+      </nav>
+      <div class="user-info">
+        <div id="sidebarContactLine">שאלות? וואטסאפ: <a href="https://wa.me/972557150826" target="_blank" style="color:#C9D2CC;">055-7150826</a></div>
+        <div style="margin-top:6px;"><a id="logoutLink" style="color:#E3B07A; cursor:pointer;">התנתקות</a></div>
+      </div>
+    </div>
+    <div class="main" id="main"></div>
+  </div>
+  <div id="modalRoot"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
+/* ======================================================================
+   הגדרות - יש להחליף את הערכים כאן בערכים מפרויקט ה-Firebase שלך
+   (איך משיגים אותם - ראה SETUP_GUIDE.md)
+   ====================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDd8rcBAPysNvsGsydUhB5AXnqIw_RwU14",
+  authDomain: "stp-lids.firebaseapp.com",
+  projectId: "stp-lids",
+  storageBucket: "stp-lids.firebasestorage.app",
+  messagingSenderId: "885779964489",
+  appId: "1:885779964489:web:cc8dd3ceed61093b711598",
+};
+
+const ADMIN_CONTACT_EMAIL = "davidi@mt-law.co.il"; // כתובת המשרד - אליה נפתח מייל ב"יצירת קשר"
+
+// כתובת הבסיס של האתר שבו מתארחים דפי המערכת (ללא / בסוף) - לבניית קישורים בתוך מיילים
+const APP_BASE_URL = "https://cheery-gecko-42a573.netlify.app"; // לדוגמה: https://leads.yourfirm.co.il
+
+/* ====================================================================== */
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+function isConfigured() {
+  return !firebaseConfig.apiKey.startsWith("PASTE_");
+}
+
+function showConfigWarningIfNeeded() {
+  if (!isConfigured()) {
+    const banner = document.createElement("div");
+    banner.className = "config-banner";
+    banner.textContent = "⚠ המערכת עדיין לא מחוברת ל-Firebase - יש להשלים את ההגדרות בראש הקובץ (ראו SETUP_GUIDE.md)";
+    document.body.prepend(banner);
+  }
+}
+
+const STATUS_LABELS = {
+  new: "ליד חדש", offered: "הופץ - ממתין לתגובה", accepted: "התקבל - ממתין לדיווח",
+  declined: "נדחה", sla_expired: "פג תוקף התגובה", meeting_scheduled: "נקבעה פגישה",
+  case_opened: "נפתח תיק", not_realized: "לא התממש", not_collected: "טרם נגבה",
+  partially_collected: "נגבה חלקית", fully_collected: "נגבה במלואו", closed_no_payment: "נסגר ללא גבייה",
+  active: "פעיל", inactive: "לא פעיל", pending: "ממתין לאישור", blocked: "חסום",
+  offer_pending: "ממתין לתגובה", offer_accepted: "אישר/ה קבלה", offer_declined: "דחה/תה",
+  offer_meeting_scheduled: "נקבעה פגישה", offer_case_opened: "נפתח תיק",
+  offer_not_realized: "לא התממש", offer_closed_other_won: "נסגר - טופל ע\"י עו\"ד אחר",
+};
+function statusLabel(s) { return STATUS_LABELS[s] || s; }
+
+function fmtDate(ts) {
+  if (!ts) return "-";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString("he-IL");
+}
+
+async function isAdminUser(user) {
+  if (!user || !user.email) return false;
+  const doc = await db.collection("admins").doc(user.email).get();
+  return doc.exists;
+}
+
+async function getLawyerDoc(user) {
+  if (!user || !user.email) return null;
+  const doc = await db.collection("lawyers").doc(user.email).get();
+  return doc.exists ? { id: doc.id, ...doc.data() } : null;
+}
+
+// שומר על עמוד מנהל - מפנה להתחברות אם לא מחובר/לא מנהל
+function requireAdmin(onReady) {
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) return (window.location.href = "admin-login.html");
+    const ok = await isAdminUser(user);
+    if (!ok) {
+      alert("המשתמש המחובר אינו מוגדר כמנהל במערכת.");
+      await auth.signOut();
+      return (window.location.href = "admin-login.html");
+    }
+    onReady(user);
+  });
+}
+
+// שומר על עמוד עו"ד - מפנה להתחברות אם לא מחובר/לא רשום/לא פעיל
+function requireLawyer(onReady) {
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) return (window.location.href = "lawyer-login.html");
+    const lawyer = await getLawyerDoc(user);
+    if (!lawyer || lawyer.status !== "active") {
+      alert("חשבון זה אינו רשום/פעיל כעורך דין שותף במערכת.");
+      await auth.signOut();
+      return (window.location.href = "lawyer-login.html");
+    }
+    onReady(user, lawyer);
+  });
+}
+
+function logout(redirectTo) {
+  auth.signOut().then(() => (window.location.href = redirectTo));
+}
+
+function newId() {
+  return db.collection("_").doc().id; // דרך פשוטה לקבל מזהה רנדומלי חזק מ-Firestore
+}
+
+// הופך טקסט למוצג בבטחה (מגן מפני הזרקת קוד) - חובה על כל טקסט שמקורו בנתונים
+function esc(val) {
+  if (val === null || val === undefined) return "";
+  return String(val).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+showConfigWarningIfNeeded();
+const mainEl = document.getElementById("main");
+const modalRoot = document.getElementById("modalRoot");
+let currentLawyer = null;
+
+document.getElementById("nav").addEventListener("click", (e) => {
+  const link = e.target.closest("a[data-view]");
+  if (!link) return;
+  document.querySelectorAll("#nav a").forEach((a) => a.classList.remove("active"));
+  link.classList.add("active");
+  render(link.dataset.view);
+});
+document.getElementById("logoutLink").addEventListener("click", () => logout("lawyer-login.html"));
+
+function closeModal() { modalRoot.innerHTML = ""; }
+function openModal(html) {
+  modalRoot.innerHTML = `<div class="modal-backdrop" id="backdrop"><div class="modal">${html}</div></div>`;
+  document.getElementById("backdrop").addEventListener("click", (e) => { if (e.target.id === "backdrop") closeModal(); });
+}
+
+// כל עו"ד מתקדם בנפרד בשלבים - אין חסימה הדדית עד שלב פתיחת תיק בפועל
+const NEXT_ACTION = {
+  offer_accepted: { next: "offer_meeting_scheduled", label: "סמן: נקבעה פגישה" },
+  offer_meeting_scheduled: { next: "offer_case_opened", label: "סמן: נפתח תיק" },
+};
+
+function leadIsClosedByOther(lead) {
+  return lead.status === "case_opened" && lead.assignedLawyerEmail !== currentLawyer.email;
+}
+
+// מיישב החלטות (אישור/דחייה) שהתקבלו דרך קישור המענה הציבורי (responseTokens) לתוך ההצעה האמיתית
+// במערכת - מתבצע בכל כניסה לאזור "ההפניות שלי" (אין שרת רקע, ראו SETUP_GUIDE)
+async function reconcileMyResponseTokens() {
+  const tokensSnap = await db.collection("responseTokens").where("lawyerEmail", "==", currentLawyer.email).get();
+  for (const tokenDoc of tokensSnap.docs) {
+    const t = tokenDoc.data();
+    if (!t.decision || !t.leadId) continue;
+    try {
+      const offerRef = db.collection("leads").doc(t.leadId).collection("offers").doc(currentLawyer.email);
+      const offerDoc = await offerRef.get();
+      if (!offerDoc.exists || offerDoc.data().status !== "offer_pending") continue; // כבר יושב בעבר, או שאין הצעה כזו
+      await offerRef.update({ status: t.decision, respondedAt: t.decidedAt || firebase.firestore.FieldValue.serverTimestamp() });
+      await db.collection("statusLogs").add({
+        leadId: t.leadId, fromStatus: "offer_pending", toStatus: t.decision, actor: "lawyer", lawyerEmail: currentLawyer.email,
+        at: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      if (t.decision === "offer_declined") {
+        const leadRef = db.collection("leads").doc(t.leadId);
+        const [leadDoc, allOffersSnap] = await Promise.all([leadRef.get(), leadRef.collection("offers").get()]);
+        const lead = leadDoc.data();
+        const anyOpen = allOffersSnap.docs.some((d) => ["offer_pending", "offer_accepted", "offer_meeting_scheduled"].includes(d.data().status));
+        if (!anyOpen && lead.status === "offered") await leadRef.update({ status: "declined" });
+      }
+    } catch (ex) { console.log("יישוב תגובה נכשל עבור ליד " + t.leadId + ":", ex.message); }
+  }
+}
+
+async function renderReferrals() {
+  mainEl.innerHTML = `<h1>ההפניות שלי</h1><p class="muted">טוען...</p>`;
+  await reconcileMyResponseTokens();
+
+  // כולל גם לידים שהופצו אליי כהצעה מקבילה (גם אם בסוף עו"ד אחר פתח את התיק)
+  const snap = await db.collection("leads").where("offeredLawyerEmails", "array-contains", currentLawyer.email).get();
+  let leads = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  leads.sort((a, b) => (b.createdAt && a.createdAt ? b.createdAt.toMillis() - a.createdAt.toMillis() : 0));
+
+  // שליפת ההצעה האישית שלי (מסמך נפרד) בכל ליד, ופרטי לקוח כשההצעה שלי מאושרת ומעלה
+  leads = await Promise.all(leads.map(async (l) => {
+    const offerDoc = await db.collection("leads").doc(l.id).collection("offers").doc(currentLawyer.email).get();
+    const myOffer = offerDoc.exists ? offerDoc.data() : {};
+    let extra = {};
+    if (["offer_accepted", "offer_meeting_scheduled", "offer_case_opened"].includes(myOffer.status)) {
+      try {
+        const contactDoc = await db.collection("leads").doc(l.id).collection("private").doc("contact").get();
+        if (contactDoc.exists) extra = contactDoc.data();
+      } catch (e) { /* אין גישה - לא נורא, פשוט לא נציג */ }
+    }
+    return { ...l, myOffer, ...extra };
+  }));
+
+  const rows = leads.map((l) => {
+    const myOffer = l.myOffer || {};
+    let displayStatus = myOffer.status || l.status;
+    let actionHtml = "";
+
+    if (leadIsClosedByOther(l)) {
+      // עו"ד אחר כבר פתח תיק בפועל על הליד הזה - גם אם אני עדיין "באמצע" (אישרתי/קבעתי פגישה), התהליך שלי נסגר
+      displayStatus = "offer_closed_other_won";
+      actionHtml = `<span class="muted">עו"ד אחר כבר פתח תיק על ליד זה</span>`;
+    } else if (NEXT_ACTION[myOffer.status]) {
+      actionHtml = `<button class="btn small" onclick="triggerAdvance('${l.id}','${NEXT_ACTION[myOffer.status].next}')">${NEXT_ACTION[myOffer.status].label}</button>
+                    <button class="btn small secondary" onclick="advanceStatus('${l.id}','offer_not_realized')">לא התממש</button>`;
+      if (myOffer.meetingDate) actionHtml = `<div class="muted" style="margin-bottom:4px;">פגישה: ${fmtDate(myOffer.meetingDate)}</div>` + actionHtml;
+    } else if (myOffer.status === "offer_pending") {
+      actionHtml = `<span class="muted">ממתינה לתגובתך - בדוק/י את תיבת המייל לקישור המענה</span>`;
+    }
+
+    return `<tr>
+      <td>${l.leadNumber ? "#" + Number(l.leadNumber) : "-"}</td>
+      <td>${fmtDate(l.createdAt)}</td>
+      <td>${esc(l.clientName) || '<span class="muted">מוצג לאחר אישור קבלה</span>'}</td>
+      <td>${esc(l.clientPhone) || "-"}</td>
+      <td>${esc(l.practiceArea)}${l.region ? " · " + esc(l.region) : ""}</td>
+      <td><span class="badge ${displayStatus}">${statusLabel(displayStatus)}</span></td>
+      <td>${actionHtml}</td>
+    </tr>`;
+  }).join("");
+
+  mainEl.innerHTML = `<h1>ההפניות שלי</h1>
+    <p class="muted">שים לב: הפניה יכולה להישלח גם לעורכי דין נוספים במקביל. ברגע שמישהו מסמן "נפתח תיק" בפועל, הליד ננעל לשאר.</p>
+    <div class="card" style="overflow-x:auto;"><table>
+    <thead><tr><th>מס'</th><th>תאריך קבלה</th><th>שם לקוח</th><th>טלפון</th><th>תחום</th><th>סטטוס</th><th>פעולה</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="7" class="muted">עדיין לא התקבלו הפניות</td></tr>'}</tbody>
+  </table></div>`;
+}
+
+// מעבר ל"נקבעה פגישה" דורש קודם תאריך פגישה - מציג טופס קטן ורק אז קורא ל-advanceStatus
+function triggerAdvance(leadId, newOfferStatus) {
+  if (newOfferStatus !== "offer_meeting_scheduled") return advanceStatus(leadId, newOfferStatus);
+  openModal(`
+    <h2>תאריך הפגישה</h2>
+    <form id="meetingDateForm">
+      <label>מתי נקבעה הפגישה עם הלקוח?</label>
+      <input type="date" id="meetingDateInput" required>
+      <div class="error-msg" id="err"></div>
+      <div style="display:flex; gap:10px; margin-top:18px;"><button class="btn" type="submit">אישור</button><button class="btn secondary" type="button" onclick="closeModal()">ביטול</button></div>
+    </form>`);
+  document.getElementById("meetingDateForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const dateVal = document.getElementById("meetingDateInput").value;
+    closeModal();
+    await advanceStatus(leadId, newOfferStatus, { meetingDate: firebase.firestore.Timestamp.fromDate(new Date(dateVal)) });
+  });
+}
+
+async function advanceStatus(leadId, newOfferStatus, extra = {}) {
+  try {
+    const leadRef = db.collection("leads").doc(leadId);
+    const myOfferRef = leadRef.collection("offers").doc(currentLawyer.email);
+    const [leadDoc, myOfferDoc] = await Promise.all([leadRef.get(), myOfferRef.get()]);
+    const lead = leadDoc.data();
+    if (!myOfferDoc.exists) { alert("שגיאה: לא נמצאה הצעה עבורך בליד זה."); return; }
+    const myOffer = myOfferDoc.data();
+    if (lead.status === "case_opened") { alert('עו"ד אחר כבר פתח תיק על ליד זה.'); renderReferrals(); return; }
+
+    await myOfferRef.update({ ...extra, status: newOfferStatus, respondedAt: myOffer.respondedAt || firebase.firestore.FieldValue.serverTimestamp() });
+
+    if (newOfferStatus === "offer_case_opened") {
+      // אני הראשון שפתח תיק בפועל - נועל את הליד, וסוגר את ההצעות הפתוחות של שאר עורכי הדין
+      await leadRef.update({ status: "case_opened", assignedLawyerEmail: currentLawyer.email, caseOpenedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      const siblingsSnap = await leadRef.collection("offers").get();
+      const closeBatch = db.batch();
+      let anyClose = false;
+      siblingsSnap.docs.forEach((d) => {
+        const o = d.data();
+        if (d.id !== currentLawyer.email && ["offer_pending", "offer_accepted", "offer_meeting_scheduled"].includes(o.status)) {
+          closeBatch.update(d.ref, { status: "offer_closed_other_won" });
+          anyClose = true;
+        }
+      });
+      if (anyClose) await closeBatch.commit();
+    }
+
+    await db.collection("statusLogs").add({
+      leadId, fromStatus: myOffer.status, toStatus: newOfferStatus, actor: "lawyer", lawyerEmail: currentLawyer.email,
+      at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+
+    if (newOfferStatus === "offer_case_opened") {
+      await db.collection("cases").add({
+        leadId, lawyerEmail: currentLawyer.email, openedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        feeAgreed: null, collectionStatus: "not_collected", amountPaid: 0, notes: "",
+      });
+    }
+    renderReferrals();
+  } catch (ex) { alert("שגיאה: " + ex.message); }
+}
+
+let mmMasterData = { collectionStatuses: [], closureReasons: [] };
+async function loadMmMasterData() {
+  const [cs, cr] = await Promise.all([db.collection("mmCollectionStatuses").get(), db.collection("mmClosureReasons").get()]);
+  mmMasterData.collectionStatuses = cs.docs.map((d) => d.data().name);
+  mmMasterData.closureReasons = cr.docs.map((d) => d.data().name);
+}
+
+async function renderMmFiles() {
+  mainEl.innerHTML = `<h1>תיקי רשלנות רפואית שלי</h1><p class="muted">טוען...</p>`;
+  await loadMmMasterData();
+  const snap = await db.collection("mmFiles").where("assignedLawyerEmail", "==", currentLawyer.email).get();
+  let files = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  files.sort((a, b) => (b.createdAt && a.createdAt ? b.createdAt.toMillis() - a.createdAt.toMillis() : 0));
+  files = await Promise.all(files.map(async (f) => {
+    const contactDoc = await db.collection("mmFiles").doc(f.id).collection("private").doc("contact").get();
+    return contactDoc.exists ? { ...f, ...contactDoc.data() } : f;
+  }));
+
+  const rows = files.map((f) => `
+    <tr>
+      <td>${f.fileNumber ? "#" + Number(f.fileNumber) : "-"}</td>
+      <td>${fmtDate(f.createdAt)}</td>
+      <td>${esc(f.clientName) || "-"}</td>
+      <td><span class="badge ${f.status === "mm_closed" ? "declined" : "case_opened"}">${statusLabel(f.status)}</span></td>
+      <td>${esc(f.collectionStatus) || "-"}</td>
+      <td><button class="btn small" onclick="openMmFileActions('${f.id}')">פתיחה</button></td>
+    </tr>`).join("");
+
+  mainEl.innerHTML = `<h1>תיקי רשלנות רפואית שלי</h1>
+    <div class="card" style="overflow-x:auto;"><table>
+    <thead><tr><th>מס' תיק</th><th>תאריך</th><th>לקוח</th><th>סטטוס</th><th>סטטוס גבייה</th><th></th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" class="muted">אין עדיין תיקים משויכים</td></tr>'}</tbody>
+  </table></div>`;
+}
+
+async function openMmFileActions(id) {
+  const [doc, contactDoc, logSnap] = await Promise.all([
+    db.collection("mmFiles").doc(id).get(),
+    db.collection("mmFiles").doc(id).collection("private").doc("contact").get(),
+    db.collection("mmFiles").doc(id).collection("contactLog").get(),
+  ]);
+  const f = { id, ...doc.data(), ...(contactDoc.exists ? contactDoc.data() : {}) };
+  const logEntries = logSnap.docs.map((d) => d.data()).sort((a, b) => (a.at && b.at ? b.at.toMillis() - a.at.toMillis() : 0));
+  const logRows = logEntries.map((l) => `<tr><td>${fmtDate(l.at)}</td><td>${esc(l.note)}</td></tr>`).join("") || '<tr><td colspan="2" class="muted">אין עדיין רישומים</td></tr>';
+
+  openModal(`
+    <h2>תיק ${f.fileNumber ? "#" + Number(f.fileNumber) : ""}</h2>
+    <p><b>לקוח:</b> ${esc(f.clientName) || "-"} · ${esc(f.clientPhone) || "-"}</p>
+    <p><b>תיאור:</b> ${esc(f.description) || "-"}</p>
+    <p><b>סטטוס:</b> <span class="badge ${f.status === "mm_closed" ? "declined" : "case_opened"}">${statusLabel(f.status)}</span></p>
+    ${f.status !== "mm_closed" ? `
+    <form id="addContactForm">
+      <label>רישום מגע חדש בתיק</label>
+      <textarea id="contactNote" required placeholder="לדוגמה: שוחחתי עם הלקוח, הוגש כתב תביעה וכו'"></textarea>
+      <button class="btn small" type="submit" style="margin-top:8px;">הוספת רישום</button>
+    </form>
+    <form id="mmLawyerCsForm" style="margin-top:16px;">
+      <label>עדכון סטטוס גבייה</label>
+      <select id="mmLawyerCs">
+        <option value="">-</option>
+        ${mmMasterData.collectionStatuses.map((s) => `<option value="${esc(s)}" ${f.collectionStatus === s ? "selected" : ""}>${esc(s)}</option>`).join("")}
+      </select>
+      <button class="btn small secondary" type="submit" style="margin-top:8px;">עדכון</button>
+    </form>
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+      <label>סגירת התיק</label>
+      <select id="mmLawyerCr"><option value="">בחר/י סיבת סגירה...</option>${mmMasterData.closureReasons.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`).join("")}</select>
+      <button class="btn danger small" style="margin-top:8px;" onclick="closeMyMmFile('${id}')">סגירת תיק</button>
+    </div>` : `<p class="muted">התיק סגור. סיבה: ${esc(f.closureReason) || "-"}</p>`}
+    <h3 style="margin-top:20px;">יומן מגעים</h3>
+    <table><thead><tr><th>תאריך</th><th>הערה</th></tr></thead><tbody>${logRows}</tbody></table>
+    <div style="margin-top:16px;"><button class="btn secondary" onclick="closeModal()">סגירה</button></div>`);
+
+  const addForm = document.getElementById("addContactForm");
+  if (addForm) addForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await db.collection("mmFiles").doc(id).collection("contactLog").add({
+      note: document.getElementById("contactNote").value, byLawyerEmail: currentLawyer.email,
+      at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    openMmFileActions(id);
+  });
+  const csForm = document.getElementById("mmLawyerCsForm");
+  if (csForm) csForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await db.collection("mmFiles").doc(id).update({ collectionStatus: document.getElementById("mmLawyerCs").value });
+    openMmFileActions(id);
+  });
+}
+
+async function closeMyMmFile(id) {
+  const reason = document.getElementById("mmLawyerCr").value;
+  if (!reason) { alert("יש לבחור סיבת סגירה."); return; }
+  if (!confirm("לסגור את התיק?")) return;
+  await db.collection("mmFiles").doc(id).update({ status: "mm_closed", closureReason: reason, closedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  openMmFileActions(id);
+}
+
+async function renderCases() {
+  mainEl.innerHTML = `<h1>התיקים שלי</h1><p class="muted">טוען...</p>`;
+  const snap = await db.collection("cases").where("lawyerEmail", "==", currentLawyer.email).get();
+  const cases = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  const rows = cases.map((c) => `
+    <tr>
+      <td>${fmtDate(c.openedAt)}</td>
+      <td>${c.feeAgreed ?? '<span class="muted">טרם נקבע ע"י המשרד</span>'}</td>
+      <td><span class="badge ${c.collectionStatus}">${statusLabel(c.collectionStatus)}</span></td>
+      <td>₪${c.amountPaid || 0}</td>
+      <td><button class="btn small" onclick="openCaseUpdate('${c.id}', ${c.amountPaid || 0}, '${c.collectionStatus}')">עדכון גבייה</button></td>
+    </tr>`).join("");
+
+  window._myCasesData = cases;
+
+  mainEl.innerHTML = `
+    <div class="toolbar" style="justify-content:space-between;"><h1 style="margin:0;">התיקים שלי</h1>
+      <button class="btn secondary" onclick="downloadMyCasesCsv()">ייצוא לדוח (CSV)</button>
+    </div>
+    <div class="card"><table>
+    <thead><tr><th>נפתח בתאריך</th><th>שכ"ט שסוכם</th><th>סטטוס גבייה</th><th>שולם בפועל</th><th></th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="5" class="muted">עדיין אין תיקים פתוחים</td></tr>'}</tbody>
+  </table></div>`;
+}
+
+function downloadMyCasesCsv() {
+  const cases = window._myCasesData || [];
+  const rows = [["נפתח בתאריך", "שכ\"ט שסוכם", "סטטוס גבייה", "שולם בפועל"]];
+  cases.forEach((c) => rows.push([fmtDate(c.openedAt), c.feeAgreed ?? "", statusLabel(c.collectionStatus), c.amountPaid || 0]));
+  const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `התיקים-שלי-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function openCaseUpdate(caseId, amountPaid, collectionStatus) {
+  openModal(`
+    <h2>עדכון גבייה</h2>
+    <form id="caseForm">
+      <label>סטטוס גבייה</label>
+      <select id="collectionStatus">${["not_collected","partially_collected","fully_collected","closed_no_payment"].map((s) => `<option value="${s}" ${s === collectionStatus ? "selected" : ""}>${statusLabel(s)}</option>`).join("")}</select>
+      <label>סכום ששולם בפועל (₪)</label><input id="amountPaid" type="number" value="${amountPaid}">
+      <div class="error-msg" id="err"></div>
+      <div style="display:flex; gap:10px; margin-top:18px;"><button class="btn" type="submit">שמירה</button><button class="btn secondary" type="button" onclick="closeModal()">ביטול</button></div>
+    </form>`);
+
+  document.getElementById("caseForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await db.collection("cases").doc(caseId).update({
+        collectionStatus: document.getElementById("collectionStatus").value,
+        amountPaid: Number(document.getElementById("amountPaid").value),
+      });
+      closeModal(); renderCases();
+    } catch (ex) { document.getElementById("err").textContent = ex.message; }
+  });
+}
+
+async function renderAccount() {
+  mainEl.innerHTML = `
+    <h1>הגדרות כניסה</h1>
+    <div class="card" style="max-width:420px;">
+      <p class="muted">כרגע את/ה מתחבר/ת באמצעות קישור שנשלח למייל בכל פעם. אפשר לקבוע כאן סיסמה קבועה כדי להתחבר בעתיד ישירות עם אימייל+סיסמה, בלי לחכות למייל.</p>
+      <form id="setPasswordForm">
+        <label>סיסמה חדשה (לפחות 6 תווים)</label>
+        <input type="password" id="newPassword" minlength="6" required>
+        <label>אימות סיסמה</label>
+        <input type="password" id="confirmPassword" minlength="6" required>
+        <div class="error-msg" id="pwErr"></div>
+        <div class="success-msg" id="pwMsg" style="display:none;"></div>
+        <button class="btn" type="submit" style="margin-top:14px;">שמירת סיסמה</button>
+      </form>
+    </div>`;
+
+  document.getElementById("setPasswordForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("pwErr");
+    const msg = document.getElementById("pwMsg");
+    err.textContent = ""; msg.style.display = "none";
+    const p1 = document.getElementById("newPassword").value;
+    const p2 = document.getElementById("confirmPassword").value;
+    if (p1 !== p2) { err.textContent = "הסיסמאות אינן תואמות."; return; }
+    try {
+      await auth.currentUser.updatePassword(p1);
+      msg.textContent = "הסיסמה נשמרה בהצלחה! בפעם הבאה אפשר להתחבר ישירות עם אימייל וסיסמה, דרך הקישור 'יש לי כבר סיסמה' בעמוד הכניסה.";
+      msg.style.display = "block";
+      document.getElementById("setPasswordForm").reset();
+    } catch (ex) {
+      if (ex.code === "auth/requires-recent-login") {
+        err.textContent = "מטעמי אבטחה, יש להתחבר מחדש (דרך קישור חדש מהמייל) ולנסות שוב מיד לאחר הכניסה.";
+      } else {
+        err.textContent = "שגיאה: " + ex.message;
+      }
+    }
+  });
+}
+
+function renderTerms() {
+  mainEl.innerHTML = `
+    <h1>תנאי ההתקשרות</h1>
+    <div class="card" style="max-width:760px;">
+      <h3 style="margin-top:0;">כתב התחייבות והסכם לחלוקת שכר טרחה בגין הפניית לקוחות (עבור עו"ד מטפל)</h3>
+      <p class="muted">הסכם זה מהווה חלק בלתי נפרד מתנאי השימוש בפורטל (להלן: "הפורטל" או "המערכת") והוא מחייב כל עורך דין המאשר את תנאיו ו/או המקבל הפניה של לקוח או תיק באמצעות הפורטל (להלן: "עו"ד המטפל").</p>
+
+      <h3>1. מהות ההסכם והסכמה לפי כללי האתיקה</h3>
+      <ul>
+        <li>עו"ד המטפל מצהיר ומסכים כי הפורטל פועל כפלטפורמה המקשרת ומפנה לקוחות ותיקים בין עורכי דין, וכי ידוע לו כי הפניית הלקוח אליו נעשית בכפוף להתחייבותו הבלתי חוזרת לחלוקת שכר הטרחה כאמור בהסכם זה.</li>
+        <li>בחתימתו הדיגיטלית או באישור תנאים אלו, מצהיר עו"ד המטפל כי הוא נותן את הסכמתו המפורשת, בכתב ומראש, לחלוקת שכר הטרחה לטובת משרד מרקמן טומשין, עורכי דין (להלן: "מרקמן טומשין"), וזאת בהתאם לכלל 30 לכללי לשכת עורכי הדין (אתיקה מקצועית), התשמ"ו-1986.</li>
+      </ul>
+
+      <h3>2. מודל העבודה ("על בסיס הצלחה בלבד") ושיעור חלוקת שכר הטרחה</h3>
+      <ul>
+        <li>ללא דמי רישום: קבלת ההפניות והשימוש השוטף בפורטל אינם כרוכים בתשלום מראש או בדמי מנוי.</li>
+        <li>חלוקה משכר הטרחה: בגין כל לקוח, תיק או פנייה שיועברו לעו"ד המטפל באמצעות הפורטל (להלן: "ההפניה"), ואשר בגינם ייפתח תיק שיוביל לגביית שכר טרחה בפועל, מתחייב עו"ד המטפל להעביר למשרד מרקמן טומשין סך של <b>20% (עשרים אחוזים) בתוספת מע"מ</b> כחוק מכל סכום של שכר טרחה שישולם וייגבה בפועל (להלן: "החלק בשכ"ט").</li>
+        <li>התחייבות זו חלה על כל שכר טרחה שייגבה מהלקוח בגין הטיפול המקורי, וכן בגין כל טיפול המשכי או נוסף שיצמח מאותה הפניה בתוך 3 שנים ממועד קבלתה.</li>
+      </ul>
+
+      <h3>3. חובת דיווח ועדכון סטטוס במערכת הפורטל</h3>
+      <p>עו"ד המטפל מתחייב לפעול בשקיפות מלאה ולעדכן באופן שוטף, ישיר ובזמן אמת את סטטוס הטיפול בהפניה באמצעות ממשק הפורטל, לרבות עדכון הסטטוסים הבאים:</p>
+      <ul>
+        <li>נוצר קשר / לא נוצר קשר עם הלקוח (בתוך 48 שעות מקבלת ההפניה).</li>
+        <li>נקבעה פגישה (מועד הפגישה ותוצאותיה).</li>
+        <li>נפתח תיק (צירוף מספר התיק/הסכם שכר הטרחה לצרכי מעקב, תוך שמירה על חיסיון לפי הצורך).</li>
+        <li>סטטוס גבייה וסיום טיפול.</li>
+      </ul>
+
+      <h3>4. אופן התשלום ובלעדיות האחריות</h3>
+      <ul>
+        <li>העברה ישירה מחוץ לפורטל: התשלום עבור החלק בשכ"ט (20% + מע"מ) יבוצע באופן ישיר למשרד מרקמן טומשין באמצעות העברה בנקאית או בכרטיס אשראי (ולא דרך ממשק הפורטל), בהתאם לפרטי התשלום שיסופקו על ידי נציגי המשרד.</li>
+        <li>אחריות עו"ד המטפל: האחריות הבלעדית, המלאה והמוחלטת לחישוב, גבייה והעברת התשלום חלה על עו"ד המטפל בלבד. התשלום יועבר בתוך 14 ימי עסקים ממועד פירעון כל תשלום ותשלום שהתקבל אצלו מהלקוח, כנגד חשבונית מס כחוק שתופק לו על ידי מרקמן טומשין.</li>
+      </ul>
+
+      <h3>5. שינוי תנאים והחרגות</h3>
+      <p>תנאי הסכם זה הם התנאים הסטנדרטיים והמחייבים כברירת מחדל בפורטל. בכל מקרה שבו עו"ד מטפל מבקש לבחון או להסכים על תנאים מסחריים או מקצועיים אחרים, עליו לפנות ולתאם זאת מראש מול עו"ד דוד אילוז ממשרד מרקמן טומשין, בטלפון: <b>054-2562385</b>. כל שינוי יהיה תקף אך ורק אם אושר בכתב ומראש על ידי עו"ד אילוז.</p>
+
+      <h3>6. יישוב סכסוכים ותניית בוררות</h3>
+      <p>במקרה של מחלוקת, סכסוך או טענה כלשהי בין הצדדים בקשר להסכם זה, לרבות בקשר לתקפותו, פרשנותו, הפרתו או זכאות כספית מכוחו, מסכימים הצדדים כי המחלוקת תופנה להכרעה במסלול בוררות מטעם לשכת עורכי הדין בישראל.</p>
+      <ul>
+        <li>הבורר ימונה על ידי ראש לשכת עורכי הדין (או מי מטעמו).</li>
+        <li>הבורר יהיה קשור בדין המהותי אך לא יהיה קשור בסדרי הדין ודיני הראיות.</li>
+        <li>פסק הבורר יהיה סופי ויחייב את הצדדים.</li>
+      </ul>
+
+      <h3>7. הפרות וסעדים</h3>
+      <p>דיווח כוזב, אי-עדכון סטטוס מכוון או עיכוב בהעברת התשלום למרקמן טומשין ייחשבו כהפרה יסודית של הסכם זה ושל תנאי השימוש בפורטל, ויקנו למערכת ו/או למשרד מרקמן טומשין את הזכות לחסום לאלתר את גישת עו"ד המטפל לשירות, להפסיק שליחת הפניות, ולנקוט בכל האמצעים המשפטיים והאתיים העומדים לרשותם.</p>
+    </div>`;
+}
+
+function renderContact() {
+  const subject = encodeURIComponent(`פנייה ממערכת שת"פ - מעו"ד ${currentLawyer.fullName}`);
+  const mailtoLink = `mailto:${ADMIN_CONTACT_EMAIL}?subject=${subject}`;
+
+  const contactLine = currentLawyer.lawyerType === "mm_file"
+    ? `<p class="muted" style="margin-top:16px;">לכל שאלה יש ליצור קשר עם עו"ד דנית מזור</p>`
+    : `<p class="muted" style="margin-top:16px;">לשאלות ופניות בוואטסאפ: <a href="https://wa.me/972557150826" target="_blank">055-7150826</a></p>`;
+
+  mainEl.innerHTML = `
+    <h1>יצירת קשר עם המשרד</h1>
+    <div class="card" style="max-width:480px;">
+      <p class="muted">לחיצה על הכפתור תפתח הודעת מייל חדשה בתוכנת המייל שלך, מוכנה לשליחה למשרד.</p>
+      <a class="btn" href="${mailtoLink}" style="display:inline-block; text-decoration:none; text-align:center;">פתיחת מייל חדש למשרד</a>
+      ${contactLine}
+    </div>`;
+}
+
+async function render(view) {
+  try {
+    if (view === "referrals") await renderReferrals();
+    else if (view === "cases") await renderCases();
+    else if (view === "mmfiles") await renderMmFiles();
+    else if (view === "contact") await renderContact();
+    else if (view === "terms") renderTerms();
+    else if (view === "account") await renderAccount();
+  } catch (ex) { mainEl.innerHTML = `<p class="error-msg">${ex.message}</p>`; }
+}
+
+requireLawyer((user, lawyerDoc) => {
+  currentLawyer = { email: user.email, ...lawyerDoc };
+  if (currentLawyer.lawyerType === "mm_file") {
+    document.querySelectorAll("#nav a[data-referral-only]").forEach((a) => a.style.display = "none");
+    document.querySelector('#nav a[data-mm-only]').style.display = "";
+    document.getElementById("sidebarContactLine").textContent = 'לכל שאלה יש ליצור קשר עם עו"ד דנית מזור';
+    document.querySelectorAll("#nav a").forEach((a) => a.classList.remove("active"));
+    document.querySelector('#nav a[data-view="mmfiles"]').classList.add("active");
+    render("mmfiles");
+  } else {
+    render("referrals");
+  }
+});
+  </script>
+</body>
+</html>
